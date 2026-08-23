@@ -1,4 +1,3 @@
-
 /**
  * Write a description of class SlotMachine here.
  * 
@@ -14,169 +13,245 @@ public class SlotMachine {
     public static final int MAX_WHEELS = 50;
 
     // Posicion por defecto de nuevo Rectangle 
-    private static final int X = 70;
-    private static final int Y = 15;
+    private static final int DEFAULT_X = 70;
+    private static final int DEFAULT_Y = 15;
 
-    // Constantes de diseño  pantalla
-    private static final int WIDTH_WHEEL = 40;
-    private static final int ESPACIO_WHEEL = 10;
-    private static final int MARGEN = 15;
+    // Constantes de diseño pantalla
+    private static final int WHEEL_WIDTH = 40;
+    private static final int WHEEL_SPACING = 10;
+    private static final int MARGIN = 15;
 
-    private static final int HEIGHT_TOPE  = 20;
-    private static final int HEIGHT_MEDIO = 150;
-    private static final int HEIGHT_BASE  = 20;
-    private static final int Y_INICIAL  = 50;
-    private static final int MARGEN_CANVAS = 30;
-    
-    // Dimension del canva
-    private static final int ANCHO_CANVAS = anchoMedio(MAX_WHEELS) + 2 * MARGEN_CANVAS;
-    private static final int ALTO_CANVAS  = Y_INICIAL + HEIGHT_TOPE + HEIGHT_MEDIO + HEIGHT_BASE + MARGEN_CANVAS;
-    private static final int CENTRO_X = ANCHO_CANVAS / 2;
-    
+    private static final int TOP_HEIGHT = 20;
+    private static final int MIDDLE_HEIGHT = 150;
+    private static final int BASE_HEIGHT = 20;
+    private static final int INITIAL_Y = 50;
+    private static final int CANVAS_MARGIN = 30;
+
+    // Dimension del canvas
+    private static final int CANVAS_WIDTH = middleWidth(MAX_WHEELS) + 2 * CANVAS_MARGIN;
+    private static final int CANVAS_HEIGHT = INITIAL_Y + TOP_HEIGHT + MIDDLE_HEIGHT + BASE_HEIGHT + CANVAS_MARGIN;
+    private static final int CENTER_X = CANVAS_WIDTH / 2;
+
     // Componentes de diseño de la pantalla
-    private Rectangle rectanguloTope;
-    private Rectangle rectanguloMedio;
-    private Rectangle rectanguloBase;
-    
-    //// Sobresaliente de Tope y Base respecto al ancho del medio
-    private static final int SALIENTE_TOPE = 20;
-    private static final int SALIENTE_BASE = 20;
+    private Rectangle topRectangle;
+    private Rectangle middleRectangle;
+    private Rectangle baseRectangle;
 
-    // Lista de objetos Wheel
-    private ArrayList<Wheel> listaRuedas;
+    // Sobresaliente de Tope y Base respecto al ancho del medio
+    private static final int TOP_OVERHANG = 20;
+    private static final int BASE_OVERHANG = 20;
+
+    // Lista de objetos Wheel y symbols
+    private ArrayList<Wheel> wheelList;
+    private ArrayList<String> symbols;
+    private boolean ok;
+
 
     // Anchos dinamicos (cambian con la cantidad de ruedas por eso no son "final")
-    private int anchoMedio;
-    private int anchoTope;
-    private int anchoBase;
-    private static int anchoMedio(int numRuedas){
-    return (2 * MARGEN) + (numRuedas * WIDTH_WHEEL) + ((numRuedas - 1) * ESPACIO_WHEEL);
+    private int middleWidth;
+    private int topWidth;
+    private int baseWidth;
+
+    private static int middleWidth(int numWheels) {
+        return (2 * MARGIN) + (numWheels * WHEEL_WIDTH) + ((numWheels - 1) * WHEEL_SPACING);
     }
-    
+
     public SlotMachine() {
-        
-        Canvas.getCanvas(ANCHO_CANVAS, ALTO_CANVAS);   
+        Canvas.getCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        listaRuedas = new ArrayList<>();
+        wheelList = new ArrayList<>();
+        symbols = new ArrayList<>();
+        ok = true; 
 
-        rectanguloTope  = new Rectangle();
-        rectanguloMedio = new Rectangle();
-        rectanguloBase  = new Rectangle();
+        topRectangle = new Rectangle();
+        middleRectangle = new Rectangle();
+        baseRectangle = new Rectangle();
 
-        actualizarAnchos(MIN_WHEELS);
+        updateWidths(MIN_WHEELS);
 
         // Ajustar dimensiones iniciales
-        rectanguloTope.changeSize(HEIGHT_TOPE, anchoTope);
-        rectanguloMedio.changeSize(HEIGHT_MEDIO, anchoMedio);
-        rectanguloBase.changeSize(HEIGHT_BASE, anchoBase);
+        topRectangle.changeSize(TOP_HEIGHT, topWidth);
+        middleRectangle.changeSize(MIDDLE_HEIGHT, middleWidth);
+        baseRectangle.changeSize(BASE_HEIGHT, baseWidth);
 
         // Colores de la carcasa
-        rectanguloTope.changeColor("gold");
-        rectanguloMedio.changeColor("gold");
-        rectanguloBase.changeColor("gold");
+        topRectangle.changeColor("gold");
+        middleRectangle.changeColor("gold");
+        baseRectangle.changeColor("gold");
 
         // Ubicar en el canvas desde el eje central
-        ubicarEnEje(rectanguloTope, anchoTope, Y_INICIAL);
-        ubicarEnEje(rectanguloMedio, anchoMedio, Y_INICIAL + HEIGHT_TOPE);
-        ubicarEnEje(rectanguloBase, anchoBase, Y_INICIAL + HEIGHT_TOPE + HEIGHT_MEDIO);
+        placeOnAxis(topRectangle, topWidth, INITIAL_Y);
+        placeOnAxis(middleRectangle, middleWidth, INITIAL_Y + TOP_HEIGHT);
+        placeOnAxis(baseRectangle, baseWidth, INITIAL_Y + TOP_HEIGHT + MIDDLE_HEIGHT);
 
-        rectanguloTope.makeVisible();
-        rectanguloMedio.makeVisible();
-        rectanguloBase.makeVisible();
+        topRectangle.makeVisible();
+        middleRectangle.makeVisible();
+        baseRectangle.makeVisible();
 
         // Inicializar las primeras MIN_WHEELS ruedas
-        int yRueda = Y_INICIAL + HEIGHT_TOPE + 15;
+        int yWheel = INITIAL_Y + TOP_HEIGHT + 15;
         for (int i = 1; i <= MIN_WHEELS; i++) {
-            listaRuedas.add(new Wheel(xRueda(i), yRueda));
+            wheelList.add(new Wheel(wheelX(i), yWheel));
         }
     }
-    
-    
-
+    /**
+     * MINI-CICLO I: 
+     * 1. Crear una máquina tragamonedas
+     * 2. Adicionar o eliminar una rueda
+     * 3. Adicionar o eliminar un símbolo
+     */
     /**
      * Recalcula la proporcion de los 3 rectangulos de la maquina
-    */
-    private void actualizarAnchos(int nRuedas) {
-    anchoMedio = anchoMedio(nRuedas);
-    anchoTope  = anchoMedio + 2 * SALIENTE_TOPE;   
-    anchoBase  = anchoMedio + 2 * SALIENTE_BASE;   
+     */
+    private void updateWidths(int numWheels) {
+        middleWidth = middleWidth(numWheels);
+        topWidth = middleWidth + 2 * TOP_OVERHANG;
+        baseWidth = middleWidth + 2 * BASE_OVERHANG;
     }
 
     /**
-     * Posiciona un rectangulo centrado en "CENTRO_X" 
+     * Posiciona un rectangulo centrado en "CENTER_X" 
      */
-    private void ubicarEnEje(Rectangle r, int width, int y) {
-        int xDestino = CENTRO_X - (width / 2);
-        r.moveHorizontal(xDestino - X);
-        r.moveVertical(y - Y);
+    private void placeOnAxis(Rectangle r, int width, int y) {
+        int xDest = CENTER_X - (width / 2);
+        r.moveHorizontal(xDest - DEFAULT_X);
+        r.moveVertical(y - DEFAULT_Y);
     }
 
     /** 
-     * Calcula la coordenada X  para ubicar la rueda del indice especificado (empieza en 1) 
+     * Calcula la coordenada X para ubicar la rueda del indice especificado (empieza en 1) 
      */
-    public int xRueda(int indice) {
-        int xInicioMedio = CENTRO_X - (anchoMedio / 2);
-        return xInicioMedio + MARGEN + (indice - 1) * (WIDTH_WHEEL + ESPACIO_WHEEL);
+    public int wheelX(int index) {
+        int xStartMiddle = CENTER_X - (middleWidth / 2);
+        return xStartMiddle + MARGIN + (index - 1) * (WHEEL_WIDTH + WHEEL_SPACING);
     }
 
     /** Reajusta el tamaño de la pantalla y centra todas las ruedas existentes */
-    private void redimension(int oldWidthMedio, int oldHeightBase) {
-        int despMedioTope = -(anchoMedio - oldWidthMedio) / 2;
-        int despBase        = -(anchoBase - oldHeightBase) / 2;
+    private void resizeStructure(int oldMiddleWidth, int oldBaseWidth) {
+        int middleTopOffset = -(middleWidth - oldMiddleWidth) / 2;
+        int baseOffset = -(baseWidth - oldBaseWidth) / 2;
 
-        rectanguloMedio.changeSize(HEIGHT_MEDIO, anchoMedio);
-        rectanguloMedio.moveHorizontal(despMedioTope);
+        middleRectangle.changeSize(MIDDLE_HEIGHT, middleWidth);
+        middleRectangle.moveHorizontal(middleTopOffset);
 
-        rectanguloTope.changeSize(HEIGHT_TOPE, anchoTope);
-        rectanguloTope.moveHorizontal(despMedioyTope);
+        topRectangle.changeSize(TOP_HEIGHT, topWidth);
+        topRectangle.moveHorizontal(middleTopOffset);
 
-        rectanguloBase.changeSize(HEIGHT_BASE, anchoBase);
-        rectanguloBase.moveHorizontal(despBase);
+        baseRectangle.changeSize(BASE_HEIGHT, baseWidth);
+        baseRectangle.moveHorizontal(baseOffset);
 
-        for (Wheel rueda : listaRuedas) {
-            rueda.moverHorizontal(despMedioyTope);
+        for (Wheel wheel : wheelList) {
+            wheel.moveHorizontal(middleTopOffset);
         }
     }
 
     public void addWheel() {
-        if (listaRuedas.size() < MAX_WHEELS) {
-            int anchoViejoMedio = anchoMedio;
-            int anchoViejoBase  = anchoBase;
+        if (wheelList.size() < MAX_WHEELS) {
+            int oldMiddleWidth = middleWidth;
+            int oldBaseWidth = baseWidth;
 
-            actualizarAnchos(listaRuedas.size() + 1);
-            redimension(anchoViejoMedio, anchoViejoBase);
+            updateWidths(wheelList.size() + 1);
+            resizeStructure(oldMiddleWidth, oldBaseWidth);
 
-            int yRueda = Y_INICIAL + HEIGHT_TOPE + 15;
-            int xNueva = xRueda(listaRuedas.size() + 1);
-            listaRuedas.add(new Wheel(xNueva, yRueda));
+            int yWheel = INITIAL_Y + TOP_HEIGHT + 15;
+            int xNew = wheelX(wheelList.size() + 1);
+            
+            Wheel newWheel = new Wheel(xNew, yWheel);
+            for(int i = 0; i < symbols.size(); i++){
+                newWheel.addSymbol(i, symbols.get(i));
+            }
+            wheelList.add(newWheel);
+            
         } else {
             JOptionPane.showMessageDialog(null,
-                "No puedes agregar más ruedas. Máximo permitido: " + MAX_WHEELS,
-                "Límite Máximo",
+                "No puedes agregar mas ruedas. Maximo permitido: " + MAX_WHEELS,
+                "Limite Maximo",
                 JOptionPane.WARNING_MESSAGE);
-        }
+        }   
     }
 
     public void delWheel() {
-        if (listaRuedas.size() > MIN_WHEELS) {
-            Wheel ultima = listaRuedas.remove(listaRuedas.size() - 1);
-            ultima.makeInvisible();
+        if (wheelList.size() > MIN_WHEELS) {
+            Wheel last = wheelList.remove(wheelList.size() - 1);
+            last.makeInvisible();
 
-            int anchoViejoMedio = anchoMedio;
-            int anchoViejoBase  = anchoBase;
+            int oldMiddleWidth = middleWidth;
+            int oldBaseWidth = baseWidth;
 
-            actualizarAnchos(listaRuedas.size());
-            redimension(anchoViejoMedio, anchoViejoBase);
+            updateWidths(wheelList.size());
+            resizeStructure(oldMiddleWidth, oldBaseWidth);
         } else {
             JOptionPane.showMessageDialog(null,
-                "No puedes eliminar más ruedas. Mínimo permitido: " + MIN_WHEELS,
-                "Límite Mínimo",
+                "No puedes eliminar mas ruedas. Minimo permitido: " + MIN_WHEELS,
+                "Limite Minimo",
                 JOptionPane.WARNING_MESSAGE);
         }
     }
 
     public int getWheels() {
-        return listaRuedas.size();
+        return wheelList.size();
     }
+    /**
+     * Agrega un simbolo en la posicion indicada y lo establece en las demas ruedas
+     * Si el color ya existe, la operacion falla
+     */
+    public void addSymbol(int pos, String color){
+        if(symbols.contains(color)){
+            ok = false;
+            return;
+        }
+        int index = clamPos(pos, symbols.size() + 1) -1;
+        symbols.add(index, color);
+        for(Wheel wheel : wheelList){
+            wheel.addSymbol(index, color);
+        }
+        ok = true;
+    }
+    /**
+     * Elimina un simbolo de todas las ruedas
+     */
+    public void delSymbol(String color){
+        int index = symbols.indexOf(color);
+        if(index == -1) {
+            ok = false; return;
+        }
+        symbols.remove(index);
+        for (Wheel wheel : wheelList){
+            wheel.delSymbol(color);
+        }
+        ok = true;
+    }
+    /**
+     * Ajusta posiciones perdidas en un rango de [1, max]
+     */
+    private int clamPos(int pos, int max){
+        if(pos < 1 ) return 1;
+        if(pos > max) return max;
+        return pos;
+    }
+    
+      public void placeSymbol(int wheel, String symbol){
+          if(!symbols.contains(symbol)){
+              ok = false;
+              JOptionPane.showMessageDialog(null, "El simbolo " + symbol + "no existe", "Error", JOptionPane.WARNING_MESSAGE); return;
+              
+          }
+          int index = clamPos(wheel, wheelList.size())-1;
+          wheelList.get(index).setSymbol(symbol);
+          ok = true;
+      }
+    /**
+     * MINI-CICLO II: 
+     * 4. Girar las ruedas de la máquina
+     * 5. Consultar los símbolos de la máquina
+     * 6. Consultar si la configuración es la ganadora
+     */
+   
+    
+    /**
+     * MINI-CICLO III: 
+     * 7. Hacer visible o invisible el simulador (debe poder funcionar en modo invisible)
+     * 8. Terminar el simulador
+     */
     
 }
