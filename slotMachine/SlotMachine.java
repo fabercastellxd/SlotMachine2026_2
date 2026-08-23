@@ -46,7 +46,6 @@ public class SlotMachine {
     private ArrayList<String> symbols;
     private boolean ok;
 
-
     // Anchos dinamicos (cambian con la cantidad de ruedas por eso no son "final")
     private int middleWidth;
     private int topWidth;
@@ -61,7 +60,7 @@ public class SlotMachine {
 
         wheelList = new ArrayList<>();
         symbols = new ArrayList<>();
-        ok = true; 
+        ok = true;
 
         topRectangle = new Rectangle();
         middleRectangle = new Rectangle();
@@ -94,12 +93,14 @@ public class SlotMachine {
             wheelList.add(new Wheel(wheelX(i), yWheel));
         }
     }
+
     /**
      * MINI-CICLO I: 
      * 1. Crear una máquina tragamonedas
      * 2. Adicionar o eliminar una rueda
      * 3. Adicionar o eliminar un símbolo
      */
+    
     /**
      * Recalcula la proporcion de los 3 rectangulos de la maquina
      */
@@ -145,7 +146,7 @@ public class SlotMachine {
         }
     }
 
-    public void addWheel() {
+    public void addWheel(int pos) {
         if (wheelList.size() < MAX_WHEELS) {
             int oldMiddleWidth = middleWidth;
             int oldBaseWidth = baseWidth;
@@ -170,7 +171,7 @@ public class SlotMachine {
         }   
     }
 
-    public void delWheel() {
+    public void delWheel(int pos) {
         if (wheelList.size() > MIN_WHEELS) {
             Wheel last = wheelList.remove(wheelList.size() - 1);
             last.makeInvisible();
@@ -191,6 +192,7 @@ public class SlotMachine {
     public int getWheels() {
         return wheelList.size();
     }
+
     /**
      * Agrega un simbolo en la posicion indicada y lo establece en las demas ruedas
      * Si el color ya existe, la operacion falla
@@ -207,6 +209,7 @@ public class SlotMachine {
         }
         ok = true;
     }
+
     /**
      * Elimina un simbolo de todas las ruedas
      */
@@ -221,6 +224,7 @@ public class SlotMachine {
         }
         ok = true;
     }
+
     /**
      * Ajusta posiciones perdidas en un rango de [1, max]
      */
@@ -230,28 +234,41 @@ public class SlotMachine {
         return pos;
     }
     
-      public void placeSymbol(int wheel, String symbol){
-          if(!symbols.contains(symbol)){
-              ok = false;
-              JOptionPane.showMessageDialog(null, "El simbolo " + symbol + "no existe", "Error", JOptionPane.WARNING_MESSAGE); return;
-              
-          }
-          int index = clamPos(wheel, wheelList.size())-1;
-          wheelList.get(index).setSymbol(symbol);
-          ok = true;
-      }
+    public void placeSymbol(int wheel, String symbol){
+        if(!symbols.contains(symbol)){
+            ok = false;
+            JOptionPane.showMessageDialog(null, "El simbolo " + symbol + "no existe", "Error", JOptionPane.WARNING_MESSAGE); 
+            return;
+        }
+        int index = clamPos(wheel, wheelList.size())-1;
+        wheelList.get(index).setSymbol(symbol);
+        ok = true;
+    }
+
     /**
      * MINI-CICLO II: 
      * 4. Girar las ruedas de la máquina
      * 5. Consultar los símbolos de la máquina
      * 6. Consultar si la configuración es la ganadora
      */
-   
     
+    // Métodos para ciclo 2 
+    public void spin(int wheel) {}
+    public void spin() {}
+    public String[] symbols() { return null; }
+    public int distinctSymbols() { return 0; }
+    public String[] configuration() { return null; }
+    public boolean isJackpot() { return false; }
+
     /**
      * MINI-CICLO III: 
      * 7. Hacer visible o invisible el simulador (debe poder funcionar en modo invisible)
      * 8. Terminar el simulador
      */
     
+    // Métodos para ciclo 3 
+    public void makeVisible() {}
+    public void makeInvisible() {}
+    public void exit() {}
+    public boolean ok() { return ok; }
 }

@@ -5,6 +5,7 @@
  * @version (23/08/26)
  */
 import java.util.ArrayList;
+
 public class Wheel {
     private static final int HEIGHT = 120;
     private static final int WIDTH = 40;
@@ -16,7 +17,6 @@ public class Wheel {
     private Rectangle wheel;
     private ArrayList<String> symbols;
     private int currentIndex = -1;
-
 
     public Wheel(int x, int y) {
         wheel = new Rectangle();
@@ -44,6 +44,9 @@ public class Wheel {
         wheel.makeInvisible();
     }
     
+    public void makeVisible() {
+        // Para ciclo 3
+    }
     
     /**
      * Agrega un simbolo a una rueda en la posicion indicada
@@ -53,6 +56,7 @@ public class Wheel {
         if(currentIndex == -1) currentIndex = 0;
         showCurrentSymbol();
     }
+    
     /**
      * Elimina un simbolo de una rueda
      */
@@ -64,19 +68,27 @@ public class Wheel {
         else if (currentIndex >= symbols.size()) currentIndex = symbols.size() -1;
         showCurrentSymbol();
     }
+    
     /**
      * Repinta la rueda con el color actual del simbolo
      */
     private void showCurrentSymbol(){
         wheel.changeColor(currentIndex == -1 ? "gray" : symbols.get(currentIndex));
     }
+    
     /**
      * Fija el simbolo que una rueda muestra actualmente
      */
-      public void setSymbol(String color){
+    public void setSymbol(String color){
         int index = symbols.indexOf(color);
         if(index == -1) return;
         currentIndex = index;
         showCurrentSymbol();
     }
+
+    // Métodos para ciclo 2 (solo firmas)
+    public void rotate(int j) {}
+    public Object getVisibleSymbol() { return null; }
+    public int getIndicator() { return 0; }
+    public int size() { return 0; }
 }
