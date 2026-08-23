@@ -129,3 +129,6 @@ $RECYCLE.BIN/
 *.html
 *.css
 *.js
+
+*.pkg
+*.bluej
