@@ -44,10 +44,6 @@ public class Wheel {
         wheel.makeInvisible();
     }
     
-    public void makeVisible() {
-        // Para ciclo 3
-    }
-    
     /**
      * Agrega un simbolo a una rueda en la posicion indicada
      */
@@ -86,9 +82,42 @@ public class Wheel {
         showCurrentSymbol();
     }
 
-    // Métodos para ciclo 2 (solo firmas)
-    public void rotate(int j) {}
-    public Object getVisibleSymbol() { return null; }
-    public int getIndicator() { return 0; }
-    public int size() { return 0; }
+    // Metodos para ciclo 2 y 3 
+    /**
+     * Hace visible la rueda
+     */
+    public void makeVisible() {
+        wheel.makeVisible();
+    }
+    /**
+     * rota el indcie del simbolo actual saltando x posiciones y se calcuale de forma circualra (manejando valores negativos sin problema)
+     */
+    public void rotate(int x){
+        if(symbols.isEmpty()) return;
+        currentIndex = (currentIndex +x) % symbols.size();
+        if(currentIndex < 0){
+            currentIndex = (currentIndex + symbols.size()) % symbols.size();            
+        }
+        showCurrentSymbol();
+    }
+    /**
+     * Retorna el color del simbolo acutal
+     */
+    public String getVisibleSymbol(){
+        if(currentIndex == -1 || symbols.isEmpty()){
+            return null; 
+        } return symbols.get(currentIndex);
+    }
+    /**
+     * Retorna el indicador de la posicion actual dentro de la rueda
+     */
+    public int getIndicator(){
+        return currentIndex +1;
+    }
+    /**
+     * Retorna la cantidad de simbolos
+     */
+    public int size(){
+        return symbols.size();
+    }
 }

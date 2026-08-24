@@ -7,6 +7,7 @@
 
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
+import java.util.Random;
 
 public class SlotMachine {
     public static final int MIN_WHEELS = 3;
@@ -242,6 +243,7 @@ public class SlotMachine {
         }
         int index = clamPos(wheel, wheelList.size())-1;
         wheelList.get(index).setSymbol(symbol);
+        checkJackPot();
         ok = true;
     }
 
@@ -252,13 +254,101 @@ public class SlotMachine {
      * 6. Consultar si la configuración es la ganadora
      */
     
-    // Métodos para ciclo 2 
-    public void spin(int wheel) {}
-    public void spin() {}
-    public String[] symbols() { return null; }
-    public int distinctSymbols() { return 0; }
-    public String[] configuration() { return null; }
-    public boolean isJackpot() { return false; }
+    /**
+     * Gira una rueda en especifico de manera aleatoria
+     */
+    public void spin(int wheel) {
+        if(wheelList.isEmpty() || symbols.isEmpty()){
+            ok = false;
+            return;
+        }
+        int index = clamPos(wheel, wheelList.size()) -1;
+        Random r = new Random();
+        int turns = r.nextInt(15)+1;
+        wheelList.get(index).rotate(turns);
+        checkJackPot();
+        ok = true;
+    }
+
+    /**
+     * Gira todas las ruedas aleatoriamente
+     */
+    public void spin() {
+        if (wheelList.isEmpty() || symbols.isEmpty()){
+            ok = false;
+            return;
+        }
+        Random r = new Random();
+        for(Wheel i : wheelList){
+            int turns = r.nextInt(15)+1;
+            i.rotate(turns);
+        }
+        checkJackPot();
+        ok = true;
+    }
+    /**
+     * Retorna los colores en el orden de la lista central
+     */
+    public String[] symbols(){
+        ok = true;
+        return symbols.toArray(new String[0]);
+    }
+    
+    /**
+     * Retorna la cantidad de simbolos diferentes
+     */
+    public int distinctSymbols() {
+        ok = true;
+        return symbols.size();
+    }
+
+    /**
+     * Retorna los colores visibles en todas las ruedas (izquierda a derecha)
+     */
+    public String[] configuration() {
+        String[] conf = new String[wheelList.size()];
+        for(int i = 0; i < wheelList.size(); i++){
+            conf[i] = (String) wheelList.get(i).getVisibleSymbol();
+        }
+        ok = true;
+        return conf;
+    }
+
+    /**
+     * Verifica si se hizo jackpot al coincidir todos los simbolos
+     */
+    public boolean isJackpot() {
+        if (wheelList.isEmpty() || symbols.isEmpty()){
+            ok = false;
+            return false;
+        }
+        String[] conf = configuration();
+        String first = conf[0];
+        if(first == null){
+            ok = true;
+            return false;
+        }
+        for(int i = 0; i < conf.length; i++){
+            if(conf[i] == null || !conf[i].equals(first)){
+                ok = true;
+                return false;
+            }
+        }
+        ok = true;
+        return true;
+    }
+    /**
+     * Verifica si se hizo jackpot y cambio el color de la maquina
+     */
+    private void checkJackPot(){
+        if(isJackpot()){
+            topRectangle.changeColor("magenta");
+            baseRectangle.changeColor("magenta");
+        } else{
+            topRectangle.changeColor("gold");
+            baseRectangle.changeColor("gold");
+        }
+    }
 
     /**
      * MINI-CICLO III: 
@@ -266,9 +356,43 @@ public class SlotMachine {
      * 8. Terminar el simulador
      */
     
-    // Métodos para ciclo 3 
-    public void makeVisible() {}
-    public void makeInvisible() {}
-    public void exit() {}
-    public boolean ok() { return ok; }
+    /**
+     * Hace visible todo el simulador
+     */
+    public void makeVisible(){
+        topRectangle.makeVisible();
+        middleRectangle.makeVisible();
+        baseRectangle.makeVisible();
+        for(Wheel i : wheelList){
+            i.makeVisible();
+        }
+        ok = true;
+    }
+    
+    /**
+     * Hace invisible todo el simulador
+     */
+    public void makeInvisible() {
+        topRectangle.makeInvisible();
+        middleRectangle.makeInvisible();
+        baseRectangle.makeInvisible();
+        for(Wheel i : wheelList){
+            i.makeInvisible();
+        }
+        ok = true;
+    }
+
+    /**
+     * Termina el simulador
+     */
+    public void exit() {
+        System.exit(0);
+    }
+
+    /**
+     * Retorna el estado de la ultima operacion
+     */
+    public boolean ok() {
+        return ok;
+    }
 }
