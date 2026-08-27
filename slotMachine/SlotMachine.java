@@ -1,23 +1,33 @@
-/**
- * Write a description of class SlotMachine here.
- * 
- * @author (Mateo) 
- * @version (22/08/26)
- */
-
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
 import java.util.Random;
 
+/**
+ * Represents a slot machine simulator.
+ * The machine manages a dynamic set of wheels (between {@link #MIN_WHEELS} and {@link #MAX_WHEELS}),
+ * a collection of distinct symbols (represented as colors), graphical elements (top, middle, and base rectangles),
+ * and game state operations such as spinning, jackpot verification, and visibility toggling.
+ * 
+ * @author Mateo
+ * @author Maria Angelica
+ * @version 22/08/26
+ */
+ 
 public class SlotMachine {
+    
+    /**
+     * Minimum number of wheels permitted in the slot machine.
+     */
+     
     public static final int MIN_WHEELS = 3;
-    public static final int MAX_WHEELS = 50;
 
-    // Posicion por defecto de nuevo Rectangle 
+    /**
+     * Maximum number of wheels permitted in the slot machine.
+     */
+     
+    public static final int MAX_WHEELS = 50;
     private static final int DEFAULT_X = 70;
     private static final int DEFAULT_Y = 15;
-
-    // Constantes de diseño pantalla
     private static final int WHEEL_WIDTH = 40;
     private static final int WHEEL_SPACING = 10;
     private static final int MARGIN = 15;
@@ -28,34 +38,39 @@ public class SlotMachine {
     private static final int INITIAL_Y = 50;
     private static final int CANVAS_MARGIN = 30;
 
-    // Dimension del canvas
     private static final int CANVAS_WIDTH = middleWidth(MAX_WHEELS) + 2 * CANVAS_MARGIN;
     private static final int CANVAS_HEIGHT = INITIAL_Y + TOP_HEIGHT + MIDDLE_HEIGHT + BASE_HEIGHT + CANVAS_MARGIN;
     private static final int CENTER_X = CANVAS_WIDTH / 2;
 
-    // Componentes de diseño de la pantalla
     private Rectangle topRectangle;
     private Rectangle middleRectangle;
     private Rectangle baseRectangle;
-
-    // Sobresaliente de Tope y Base respecto al ancho del medio
     private static final int TOP_OVERHANG = 20;
     private static final int BASE_OVERHANG = 20;
-
-    // Lista de objetos Wheel y symbols
     private ArrayList<Wheel> wheelList;
     private ArrayList<String> symbols;
     private boolean ok;
-
-    // Anchos dinamicos (cambian con la cantidad de ruedas por eso no son "final")
     private int middleWidth;
     private int topWidth;
     private int baseWidth;
 
+    /**
+     * Calculates the width of the middle section housing the given number of wheels.
+     * 
+     * @param numWheels The number of wheels.
+     * @return The calculated width in pixels.
+     */
+     
     private static int middleWidth(int numWheels) {
         return (2 * MARGIN) + (numWheels * WHEEL_WIDTH) + ((numWheels - 1) * WHEEL_SPACING);
     }
 
+    /**
+     * Constructs and initializes a new SlotMachine instance.
+     * Sets up the canvas, initializes default wheels ({@link #MIN_WHEELS}), builds the machine structure
+     * (top, middle, base), and renders all components visibly.
+     */
+     
     public SlotMachine() {
         Canvas.getCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -69,17 +84,14 @@ public class SlotMachine {
 
         updateWidths(MIN_WHEELS);
 
-        // Ajustar dimensiones iniciales
         topRectangle.changeSize(TOP_HEIGHT, topWidth);
         middleRectangle.changeSize(MIDDLE_HEIGHT, middleWidth);
         baseRectangle.changeSize(BASE_HEIGHT, baseWidth);
 
-        // Colores de la carcasa
         topRectangle.changeColor("gold");
         middleRectangle.changeColor("gold");
         baseRectangle.changeColor("gold");
 
-        // Ubicar en el canvas desde el eje central
         placeOnAxis(topRectangle, topWidth, INITIAL_Y);
         placeOnAxis(middleRectangle, middleWidth, INITIAL_Y + TOP_HEIGHT);
         placeOnAxis(baseRectangle, baseWidth, INITIAL_Y + TOP_HEIGHT + MIDDLE_HEIGHT);
@@ -88,7 +100,6 @@ public class SlotMachine {
         middleRectangle.makeVisible();
         baseRectangle.makeVisible();
 
-        // Inicializar las primeras MIN_WHEELS ruedas
         int yWheel = INITIAL_Y + TOP_HEIGHT + 15;
         for (int i = 1; i <= MIN_WHEELS; i++) {
             wheelList.add(new Wheel(wheelX(i), yWheel));
@@ -96,15 +107,12 @@ public class SlotMachine {
     }
 
     /**
-     * MINI-CICLO I: 
-     * 1. Crear una máquina tragamonedas
-     * 2. Adicionar o eliminar una rueda
-     * 3. Adicionar o eliminar un símbolo
+     * Recalculates the dimensions for the middle, top, and base sections of the machine
+     * based on the specified number of wheels.
+     * 
+     * @param numWheels The current number of wheels.
      */
-    
-    /**
-     * Recalcula la proporcion de los 3 rectangulos de la maquina
-     */
+     
     private void updateWidths(int numWheels) {
         middleWidth = middleWidth(numWheels);
         topWidth = middleWidth + 2 * TOP_OVERHANG;
@@ -112,8 +120,13 @@ public class SlotMachine {
     }
 
     /**
-     * Posiciona un rectangulo centrado en "CENTER_X" 
+     * Positions a given rectangle centered along the horizontal axis {@code CENTER_X} at coordinate {@code y}.
+     * 
+     * @param r The rectangle to position.
+     * @param width The current width of the rectangle.
+     * @param y The Y-coordinate for the rectangle.
      */
+     
     private void placeOnAxis(Rectangle r, int width, int y) {
         int xDest = CENTER_X - (width / 2);
         r.moveHorizontal(xDest - DEFAULT_X);
@@ -121,14 +134,24 @@ public class SlotMachine {
     }
 
     /** 
-     * Calcula la coordenada X para ubicar la rueda del indice especificado (empieza en 1) 
+     * Computes the horizontal coordinate (X) for a wheel based on its 1-indexed position.
+     * 
+     * @param index The 1-based index of the wheel.
+     * @return The X-coordinate where the wheel should be placed.
      */
+     
     public int wheelX(int index) {
         int xStartMiddle = CENTER_X - (middleWidth / 2);
         return xStartMiddle + MARGIN + (index - 1) * (WHEEL_WIDTH + WHEEL_SPACING);
     }
 
-    /** Reajusta el tamaño de la pantalla y centra todas las ruedas existentes */
+    /** 
+     * Resizes the housing rectangles and repositions all existing wheels to keep them centered.
+     * 
+     * @param oldMiddleWidth The previous width of the middle section.
+     * @param oldBaseWidth The previous width of the base section.
+     */
+     
     private void resizeStructure(int oldMiddleWidth, int oldBaseWidth) {
         int middleTopOffset = -(middleWidth - oldMiddleWidth) / 2;
         int baseOffset = -(baseWidth - oldBaseWidth) / 2;
@@ -147,6 +170,14 @@ public class SlotMachine {
         }
     }
 
+    /**
+     * Adds a new wheel to the slot machine.
+     * If the machine has not reached {@link #MAX_WHEELS}, expands the structure, instantiates
+     * the new wheel, and populates it with all currently registered symbols.
+     * 
+     * @param pos Desired insertion position (currently appends to the end).
+     */
+     
     public void addWheel(int pos) {
         if (wheelList.size() < MAX_WHEELS) {
             int oldMiddleWidth = middleWidth;
@@ -172,6 +203,14 @@ public class SlotMachine {
         }   
     }
 
+    /**
+     * Removes a wheel from the slot machine.
+     * As long as the number of wheels is strictly greater than {@link #MIN_WHEELS}, removes the last wheel,
+     * hides it, and adjusts the structure size accordingly.
+     * 
+     * @param pos Position of the wheel to delete.
+     */
+     
     public void delWheel(int pos) {
         if (wheelList.size() > MIN_WHEELS) {
             Wheel last = wheelList.remove(wheelList.size() - 1);
@@ -190,14 +229,24 @@ public class SlotMachine {
         }
     }
 
+    /**
+     * Returns the total number of wheels currently present in the slot machine.
+     * 
+     * @return The number of wheels.
+     */
+     
     public int getWheels() {
         return wheelList.size();
     }
 
     /**
-     * Agrega un simbolo en la posicion indicada y lo establece en las demas ruedas
-     * Si el color ya existe, la operacion falla
+     * Adds a new symbol (color) at the specified position and inserts it across all wheels.
+     * If the color already exists in the machine, the operation fails and {@link #ok()} will return {@code false}.
+     * 
+     * @param pos 1-based target insertion index for the symbol.
+     * @param color The name of the color symbol to add.
      */
+     
     public void addSymbol(int pos, String color){
         if(symbols.contains(color)){
             ok = false;
@@ -212,8 +261,12 @@ public class SlotMachine {
     }
 
     /**
-     * Elimina un simbolo de todas las ruedas
+     * Removes a symbol (color) from the slot machine and from every wheel.
+     * If the symbol is not found, the operation fails and {@link #ok()} will return {@code false}.
+     * 
+     * @param color The name of the color symbol to remove.
      */
+     
     public void delSymbol(String color){
         int index = symbols.indexOf(color);
         if(index == -1) {
@@ -227,14 +280,27 @@ public class SlotMachine {
     }
 
     /**
-     * Ajusta posiciones perdidas en un rango de [1, max]
+     * Clamps a position value to ensure it lies strictly within the range {@code [1, max]}.
+     * 
+     * @param pos The raw position input.
+     * @param max The maximum allowable value.
+     * @return The clamped position within {@code [1, max]}.
      */
+     
     private int clamPos(int pos, int max){
         if(pos < 1 ) return 1;
         if(pos > max) return max;
         return pos;
     }
     
+    /**
+     * Manually sets the visible symbol on a specific wheel.
+     * Checks if the symbol is valid and triggers jackpot verification.
+     * 
+     * @param wheel 1-based index of the target wheel.
+     * @param symbol The color symbol to display.
+     */
+     
     public void placeSymbol(int wheel, String symbol){
         if(!symbols.contains(symbol)){
             ok = false;
@@ -248,15 +314,12 @@ public class SlotMachine {
     }
 
     /**
-     * MINI-CICLO II: 
-     * 4. Girar las ruedas de la máquina
-     * 5. Consultar los símbolos de la máquina
-     * 6. Consultar si la configuración es la ganadora
+     * Randomly spins a specific wheel by rotating it a random number of steps (1 to 15)
+     * and checks for a jackpot condition.
+     * 
+     * @param wheel 1-based index of the wheel to spin.
      */
-    
-    /**
-     * Gira una rueda en especifico de manera aleatoria
-     */
+     
     public void spin(int wheel) {
         if(wheelList.isEmpty() || symbols.isEmpty()){
             ok = false;
@@ -271,8 +334,9 @@ public class SlotMachine {
     }
 
     /**
-     * Gira todas las ruedas aleatoriamente
+     * Randomly spins all wheels in the slot machine and checks for a jackpot condition.
      */
+     
     public void spin() {
         if (wheelList.isEmpty() || symbols.isEmpty()){
             ok = false;
@@ -286,25 +350,35 @@ public class SlotMachine {
         checkJackPot();
         ok = true;
     }
+
     /**
-     * Retorna los colores en el orden de la lista central
+     * Returns an array of all registered symbols in their insertion order.
+     * 
+     * @return An array of symbol strings.
      */
+     
     public String[] symbols(){
         ok = true;
         return symbols.toArray(new String[0]);
     }
     
     /**
-     * Retorna la cantidad de simbolos diferentes
+     * Returns the total count of distinct symbols registered in the machine.
+     * 
+     * @return The number of distinct symbols.
      */
+     
     public int distinctSymbols() {
         ok = true;
         return symbols.size();
     }
 
     /**
-     * Retorna los colores visibles en todas las ruedas (izquierda a derecha)
+     * Returns the array of visible symbols across all wheels from left to right.
+     * 
+     * @return An array containing the visible symbol string of each wheel.
      */
+     
     public String[] configuration() {
         String[] conf = new String[wheelList.size()];
         for(int i = 0; i < wheelList.size(); i++){
@@ -315,8 +389,11 @@ public class SlotMachine {
     }
 
     /**
-     * Verifica si se hizo jackpot al coincidir todos los simbolos
+     * Determines whether the current configuration constitutes a jackpot (all visible symbols match).
+     * 
+     * @return {@code true} if all wheels display identical non-null symbols; {@code false} otherwise.
      */
+     
     public boolean isJackpot() {
         if (wheelList.isEmpty() || symbols.isEmpty()){
             ok = false;
@@ -337,9 +414,12 @@ public class SlotMachine {
         ok = true;
         return true;
     }
+
     /**
-     * Verifica si se hizo jackpot y cambio el color de la maquina
+     * Verifies the jackpot status and changes the color of the top and base housing:
+     * magenta on jackpot win, gold otherwise.
      */
+     
     private void checkJackPot(){
         if(isJackpot()){
             topRectangle.changeColor("magenta");
@@ -351,14 +431,9 @@ public class SlotMachine {
     }
 
     /**
-     * MINI-CICLO III: 
-     * 7. Hacer visible o invisible el simulador (debe poder funcionar en modo invisible)
-     * 8. Terminar el simulador
+     * Makes all graphical components of the slot machine visible on the canvas.
      */
-    
-    /**
-     * Hace visible todo el simulador
-     */
+     
     public void makeVisible(){
         topRectangle.makeVisible();
         middleRectangle.makeVisible();
@@ -370,8 +445,9 @@ public class SlotMachine {
     }
     
     /**
-     * Hace invisible todo el simulador
+     * Hides all graphical components of the slot machine from the canvas.
      */
+     
     public void makeInvisible() {
         topRectangle.makeInvisible();
         middleRectangle.makeInvisible();
@@ -383,15 +459,19 @@ public class SlotMachine {
     }
 
     /**
-     * Termina el simulador
+     * Exits the slot machine application.
      */
+     
     public void exit() {
         System.exit(0);
     }
 
     /**
-     * Retorna el estado de la ultima operacion
+     * Returns the status of the last executed operation.
+     * 
+     * @return {@code true} if the last operation succeeded, {@code false} otherwise.
      */
+     
     public boolean ok() {
         return ok;
     }

@@ -1,16 +1,18 @@
-/**
- * Write a description of class Wheel here.
- * 
- * @author (Mateo) 
- * @version (23/08/26)
- */
 import java.util.ArrayList;
 
+/**
+ * Represents an individual wheel (reel) in a slot machine.
+ * Each wheel manages a circular list of symbols (represented as color strings)
+ * and its visual representation as a rectangle displaying the currently visible symbol.
+ * 
+ * @author Mateo
+ * @author Maria Angelica
+ * @version 23/08/26
+ */
+ 
 public class Wheel {
     private static final int HEIGHT = 120;
     private static final int WIDTH = 40;
-
-    // Posicion por defecto de rueda nueva
     private static final int DEFAULT_X = 70;
     private static final int DEFAULT_Y = 15;
 
@@ -18,6 +20,14 @@ public class Wheel {
     private ArrayList<String> symbols;
     private int currentIndex = -1;
 
+    /**
+     * Constructs a new Wheel at the specified coordinates on the canvas.
+     * Initializes an empty list of symbols and sets the default visual color to gray.
+     * 
+     * @param x The initial X-coordinate on the canvas.
+     * @param y The initial Y-coordinate on the canvas.
+     */
+     
     public Wheel(int x, int y) {
         wheel = new Rectangle();
         symbols = new ArrayList<>();
@@ -31,22 +41,32 @@ public class Wheel {
     }
 
     /** 
-     * Permite mover la rueda horizontalmente cuando la maquina se expande/contrae 
+     * Moves the wheel horizontally by a given distance.
+     * Useful when resizing or repositioning the slot machine structure.
+     * 
+     * @param distance The distance in pixels to move horizontally (positive moves right, negative moves left).
      */
+     
     public void moveHorizontal(int distance) {
         wheel.moveHorizontal(distance);
     }
 
     /** 
-     * Oculta la rueda antes de eliminarla del canvas
+     * Hides the wheel by making its visual representation invisible on the canvas.
      */
+     
     public void makeInvisible() {
         wheel.makeInvisible();
     }
     
     /**
-     * Agrega un simbolo a una rueda en la posicion indicada
+     * Adds a symbol (color) to the wheel at the specified index.
+     * If this is the first symbol added, it is automatically set as the current visible symbol.
+     * 
+     * @param index The 0-based position where the symbol should be inserted.
+     * @param color The name or value of the color representing the symbol.
      */
+     
     public void addSymbol(int index, String color){
         symbols.add(index, color);
         if(currentIndex == -1) currentIndex = 0;
@@ -54,8 +74,12 @@ public class Wheel {
     }
     
     /**
-     * Elimina un simbolo de una rueda
+     * Removes the first occurrence of a symbol (color) from the wheel.
+     * Updates the current visible index and visual display accordingly.
+     * 
+     * @param color The name or value of the color symbol to remove.
      */
+     
     public void delSymbol(String color){
         int index = symbols.indexOf(color);
         if(index == -1) return;
@@ -66,15 +90,20 @@ public class Wheel {
     }
     
     /**
-     * Repinta la rueda con el color actual del simbolo
+     * Repaints the visual rectangle to reflect the current visible symbol.
+     * Displays gray if no symbol is selected or available.
      */
+     
     private void showCurrentSymbol(){
         wheel.changeColor(currentIndex == -1 ? "gray" : symbols.get(currentIndex));
     }
     
     /**
-     * Fija el simbolo que una rueda muestra actualmente
+     * Sets the visible symbol of the wheel to the specified color if it exists in the symbol list.
+     * 
+     * @param color The name of the color symbol to display.
      */
+     
     public void setSymbol(String color){
         int index = symbols.indexOf(color);
         if(index == -1) return;
@@ -82,16 +111,21 @@ public class Wheel {
         showCurrentSymbol();
     }
 
-    // Metodos para ciclo 2 y 3 
     /**
-     * Hace visible la rueda
+     * Makes the wheel visible on the canvas.
      */
+     
     public void makeVisible() {
         wheel.makeVisible();
     }
+
     /**
-     * rota el indcie del simbolo actual saltando x posiciones y se calcuale de forma circualra (manejando valores negativos sin problema)
+     * Rotates the visible symbol by shifting {@code x} positions in the circular list.
+     * Supports both positive (forward) and negative (backward) steps.
+     * 
+     * @param x The number of positions to rotate.
      */
+     
     public void rotate(int x){
         if(symbols.isEmpty()) return;
         currentIndex = (currentIndex +x) % symbols.size();
@@ -100,23 +134,35 @@ public class Wheel {
         }
         showCurrentSymbol();
     }
+
     /**
-     * Retorna el color del simbolo acutal
+     * Returns the color name of the currently visible symbol.
+     * 
+     * @return The color of the visible symbol, or {@code null} if no symbols exist.
      */
+     
     public String getVisibleSymbol(){
         if(currentIndex == -1 || symbols.isEmpty()){
             return null; 
         } return symbols.get(currentIndex);
     }
+
     /**
-     * Retorna el indicador de la posicion actual dentro de la rueda
+     * Returns the 1-based indicator position of the currently visible symbol within the wheel.
+     * 
+     * @return The 1-based index position of the visible symbol, or 0 if no symbol is selected.
      */
+     
     public int getIndicator(){
         return currentIndex +1;
     }
+
     /**
-     * Retorna la cantidad de simbolos
+     * Returns the total number of symbols in this wheel.
+     * 
+     * @return The number of symbols in the wheel.
      */
+     
     public int size(){
         return symbols.size();
     }
