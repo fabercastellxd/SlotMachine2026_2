@@ -10,22 +10,20 @@ import java.util.Random;
  * 
  * @author Mateo
  * @author Maria Angelica
- * @version 22/08/26
+ * @version 27/08/26
  */
- 
 public class SlotMachine {
-    
+
     /**
      * Minimum number of wheels permitted in the slot machine.
      */
-     
     public static final int MIN_WHEELS = 3;
 
     /**
      * Maximum number of wheels permitted in the slot machine.
      */
-     
     public static final int MAX_WHEELS = 50;
+
     private static final int DEFAULT_X = 70;
     private static final int DEFAULT_Y = 15;
     private static final int WHEEL_WIDTH = 40;
@@ -42,14 +40,17 @@ public class SlotMachine {
     private static final int CANVAS_HEIGHT = INITIAL_Y + TOP_HEIGHT + MIDDLE_HEIGHT + BASE_HEIGHT + CANVAS_MARGIN;
     private static final int CENTER_X = CANVAS_WIDTH / 2;
 
+    private static final int TOP_OVERHANG = 20;
+    private static final int BASE_OVERHANG = 20;
+
     private Rectangle topRectangle;
     private Rectangle middleRectangle;
     private Rectangle baseRectangle;
-    private static final int TOP_OVERHANG = 20;
-    private static final int BASE_OVERHANG = 20;
+
     private ArrayList<Wheel> wheelList;
     private ArrayList<String> symbols;
     private boolean ok;
+
     private int middleWidth;
     private int topWidth;
     private int baseWidth;
@@ -60,7 +61,6 @@ public class SlotMachine {
      * @param numWheels The number of wheels.
      * @return The calculated width in pixels.
      */
-     
     private static int middleWidth(int numWheels) {
         return (2 * MARGIN) + (numWheels * WHEEL_WIDTH) + ((numWheels - 1) * WHEEL_SPACING);
     }
@@ -70,7 +70,6 @@ public class SlotMachine {
      * Sets up the canvas, initializes default wheels ({@link #MIN_WHEELS}), builds the machine structure
      * (top, middle, base), and renders all components visibly.
      */
-     
     public SlotMachine() {
         Canvas.getCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -112,7 +111,6 @@ public class SlotMachine {
      * 
      * @param numWheels The current number of wheels.
      */
-     
     private void updateWidths(int numWheels) {
         middleWidth = middleWidth(numWheels);
         topWidth = middleWidth + 2 * TOP_OVERHANG;
@@ -126,7 +124,6 @@ public class SlotMachine {
      * @param width The current width of the rectangle.
      * @param y The Y-coordinate for the rectangle.
      */
-     
     private void placeOnAxis(Rectangle r, int width, int y) {
         int xDest = CENTER_X - (width / 2);
         r.moveHorizontal(xDest - DEFAULT_X);
@@ -139,7 +136,6 @@ public class SlotMachine {
      * @param index The 1-based index of the wheel.
      * @return The X-coordinate where the wheel should be placed.
      */
-     
     public int wheelX(int index) {
         int xStartMiddle = CENTER_X - (middleWidth / 2);
         return xStartMiddle + MARGIN + (index - 1) * (WHEEL_WIDTH + WHEEL_SPACING);
@@ -151,7 +147,6 @@ public class SlotMachine {
      * @param oldMiddleWidth The previous width of the middle section.
      * @param oldBaseWidth The previous width of the base section.
      */
-     
     private void resizeStructure(int oldMiddleWidth, int oldBaseWidth) {
         int middleTopOffset = -(middleWidth - oldMiddleWidth) / 2;
         int baseOffset = -(baseWidth - oldBaseWidth) / 2;
@@ -171,62 +166,88 @@ public class SlotMachine {
     }
 
     /**
-     * Adds a new wheel to the slot machine.
-     * If the machine has not reached {@link #MAX_WHEELS}, expands the structure, instantiates
-     * the new wheel, and populates it with all currently registered symbols.
+     * Adds {@code pos} new wheels to the slot machine, all at once.
+     * The whole operation fails (nothing is added) if the resulting total would exceed {@link #MAX_WHEELS}.
      * 
-     * @param pos Desired insertion position (currently appends to the end).
+     * @param pos The number of wheels to add.
      */
-     
     public void addWheel(int pos) {
-        if (wheelList.size() < MAX_WHEELS) {
-            int oldMiddleWidth = middleWidth;
-            int oldBaseWidth = baseWidth;
-
-            updateWidths(wheelList.size() + 1);
-            resizeStructure(oldMiddleWidth, oldBaseWidth);
-
-            int yWheel = INITIAL_Y + TOP_HEIGHT + 15;
-            int xNew = wheelX(wheelList.size() + 1);
-            
-            Wheel newWheel = new Wheel(xNew, yWheel);
-            for(int i = 0; i < symbols.size(); i++){
-                newWheel.addSymbol(i, symbols.get(i));
-            }
-            wheelList.add(newWheel);
-            
-        } else {
+        if (pos < 1) {
+            ok = false;
+            return;
+        }
+        if (wheelList.size() + pos > MAX_WHEELS) {
             JOptionPane.showMessageDialog(null,
-                "No puedes agregar mas ruedas. Maximo permitido: " + MAX_WHEELS,
-                "Limite Maximo",
-                JOptionPane.WARNING_MESSAGE);
-        }   
+                "No puedes agregar " + pos + " ruedas (hay " + wheelList.size() +
+                ", el maximo es " + MAX_WHEELS + ")",
+                "Limite Maximo", JOptionPane.WARNING_MESSAGE);
+            ok = false;
+            return;
+        }
+        for (int i = 0; i < pos; i++) {
+            addOneWheel();
+        }
+        ok = true;
     }
 
     /**
-     * Removes a wheel from the slot machine.
-     * As long as the number of wheels is strictly greater than {@link #MIN_WHEELS}, removes the last wheel,
-     * hides it, and adjusts the structure size accordingly.
-     * 
-     * @param pos Position of the wheel to delete.
+     * Adds a single wheel at the end of the machine, populated with all existing symbols.
+     * Does not validate limits: {@link #addWheel(int)} is responsible for that.
      */
-     
-    public void delWheel(int pos) {
-        if (wheelList.size() > MIN_WHEELS) {
-            Wheel last = wheelList.remove(wheelList.size() - 1);
-            last.makeInvisible();
+    private void addOneWheel() {
+        int oldMiddleWidth = middleWidth;
+        int oldBaseWidth = baseWidth;
 
-            int oldMiddleWidth = middleWidth;
-            int oldBaseWidth = baseWidth;
+        updateWidths(wheelList.size() + 1);
+        resizeStructure(oldMiddleWidth, oldBaseWidth);
 
-            updateWidths(wheelList.size());
-            resizeStructure(oldMiddleWidth, oldBaseWidth);
-        } else {
-            JOptionPane.showMessageDialog(null,
-                "No puedes eliminar mas ruedas. Minimo permitido: " + MIN_WHEELS,
-                "Limite Minimo",
-                JOptionPane.WARNING_MESSAGE);
+        int yWheel = INITIAL_Y + TOP_HEIGHT + 15;
+        int xNew = wheelX(wheelList.size() + 1);
+
+        Wheel newWheel = new Wheel(xNew, yWheel);
+        for (int i = 0; i < symbols.size(); i++) {
+            newWheel.addSymbol(i, symbols.get(i));
         }
+        wheelList.add(newWheel);
+    }
+
+    /**
+     * Removes {@code pos} wheels from the slot machine, all at once.
+     * The whole operation fails (nothing is removed) if the resulting total would go below {@link #MIN_WHEELS}.
+     * 
+     * @param pos The number of wheels to remove.
+     */
+    public void delWheel(int pos) {
+        if (pos < 1) {
+            ok = false;
+            return;
+        }
+        if (wheelList.size() - pos < MIN_WHEELS) {
+            JOptionPane.showMessageDialog(null,
+                "No puedes eliminar " + pos + " ruedas (hay " + wheelList.size() +
+                ", el minimo es " + MIN_WHEELS + ")",
+                "Limite Minimo", JOptionPane.WARNING_MESSAGE);
+            ok = false;
+            return;
+        }
+        for (int i = 0; i < pos; i++) {
+            delOneWheel();
+        }
+        ok = true;
+    }
+
+    /**
+     * Removes the last wheel of the machine.
+     * Does not validate limits: {@link #delWheel(int)} is responsible for that.
+     */
+    private void delOneWheel() {
+        Wheel last = wheelList.remove(wheelList.size() - 1);
+        last.makeInvisible();
+
+        int oldMiddleWidth = middleWidth;
+        int oldBaseWidth = baseWidth;
+        updateWidths(wheelList.size());
+        resizeStructure(oldMiddleWidth, oldBaseWidth);
     }
 
     /**
@@ -234,7 +255,6 @@ public class SlotMachine {
      * 
      * @return The number of wheels.
      */
-     
     public int getWheels() {
         return wheelList.size();
     }
@@ -246,15 +266,14 @@ public class SlotMachine {
      * @param pos 1-based target insertion index for the symbol.
      * @param color The name of the color symbol to add.
      */
-     
-    public void addSymbol(int pos, String color){
-        if(symbols.contains(color)){
+    public void addSymbol(int pos, String color) {
+        if (symbols.contains(color)) {
             ok = false;
             return;
         }
-        int index = clamPos(pos, symbols.size() + 1) -1;
+        int index = clamPos(pos, symbols.size() + 1) - 1;
         symbols.add(index, color);
-        for(Wheel wheel : wheelList){
+        for (Wheel wheel : wheelList) {
             wheel.addSymbol(index, color);
         }
         ok = true;
@@ -266,14 +285,14 @@ public class SlotMachine {
      * 
      * @param color The name of the color symbol to remove.
      */
-     
-    public void delSymbol(String color){
+    public void delSymbol(String color) {
         int index = symbols.indexOf(color);
-        if(index == -1) {
-            ok = false; return;
+        if (index == -1) {
+            ok = false;
+            return;
         }
         symbols.remove(index);
-        for (Wheel wheel : wheelList){
+        for (Wheel wheel : wheelList) {
             wheel.delSymbol(color);
         }
         ok = true;
@@ -286,13 +305,12 @@ public class SlotMachine {
      * @param max The maximum allowable value.
      * @return The clamped position within {@code [1, max]}.
      */
-     
-    private int clamPos(int pos, int max){
-        if(pos < 1 ) return 1;
-        if(pos > max) return max;
+    private int clamPos(int pos, int max) {
+        if (pos < 1) return 1;
+        if (pos > max) return max;
         return pos;
     }
-    
+
     /**
      * Manually sets the visible symbol on a specific wheel.
      * Checks if the symbol is valid and triggers jackpot verification.
@@ -300,14 +318,13 @@ public class SlotMachine {
      * @param wheel 1-based index of the target wheel.
      * @param symbol The color symbol to display.
      */
-     
-    public void placeSymbol(int wheel, String symbol){
-        if(!symbols.contains(symbol)){
+    public void placeSymbol(int wheel, String symbol) {
+        if (!symbols.contains(symbol)) {
             ok = false;
-            JOptionPane.showMessageDialog(null, "El simbolo " + symbol + "no existe", "Error", JOptionPane.WARNING_MESSAGE); 
+            JOptionPane.showMessageDialog(null, "El simbolo " + symbol + " no existe", "Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        int index = clamPos(wheel, wheelList.size())-1;
+        int index = clamPos(wheel, wheelList.size()) - 1;
         wheelList.get(index).setSymbol(symbol);
         checkJackPot();
         ok = true;
@@ -319,15 +336,14 @@ public class SlotMachine {
      * 
      * @param wheel 1-based index of the wheel to spin.
      */
-     
     public void spin(int wheel) {
-        if(wheelList.isEmpty() || symbols.isEmpty()){
+        if (wheelList.isEmpty() || symbols.isEmpty()) {
             ok = false;
             return;
         }
-        int index = clamPos(wheel, wheelList.size()) -1;
+        int index = clamPos(wheel, wheelList.size()) - 1;
         Random r = new Random();
-        int turns = r.nextInt(15)+1;
+        int turns = r.nextInt(15) + 1;
         wheelList.get(index).rotate(turns);
         checkJackPot();
         ok = true;
@@ -336,15 +352,14 @@ public class SlotMachine {
     /**
      * Randomly spins all wheels in the slot machine and checks for a jackpot condition.
      */
-     
     public void spin() {
-        if (wheelList.isEmpty() || symbols.isEmpty()){
+        if (wheelList.isEmpty() || symbols.isEmpty()) {
             ok = false;
             return;
         }
         Random r = new Random();
-        for(Wheel i : wheelList){
-            int turns = r.nextInt(15)+1;
+        for (Wheel i : wheelList) {
+            int turns = r.nextInt(15) + 1;
             i.rotate(turns);
         }
         checkJackPot();
@@ -356,18 +371,16 @@ public class SlotMachine {
      * 
      * @return An array of symbol strings.
      */
-     
-    public String[] symbols(){
+    public String[] symbols() {
         ok = true;
         return symbols.toArray(new String[0]);
     }
-    
+
     /**
      * Returns the total count of distinct symbols registered in the machine.
      * 
      * @return The number of distinct symbols.
      */
-     
     public int distinctSymbols() {
         ok = true;
         return symbols.size();
@@ -378,11 +391,10 @@ public class SlotMachine {
      * 
      * @return An array containing the visible symbol string of each wheel.
      */
-     
     public String[] configuration() {
         String[] conf = new String[wheelList.size()];
-        for(int i = 0; i < wheelList.size(); i++){
-            conf[i] = (String) wheelList.get(i).getVisibleSymbol();
+        for (int i = 0; i < wheelList.size(); i++) {
+            conf[i] = wheelList.get(i).getVisibleSymbol();
         }
         ok = true;
         return conf;
@@ -393,20 +405,19 @@ public class SlotMachine {
      * 
      * @return {@code true} if all wheels display identical non-null symbols; {@code false} otherwise.
      */
-     
     public boolean isJackpot() {
-        if (wheelList.isEmpty() || symbols.isEmpty()){
+        if (wheelList.isEmpty() || symbols.isEmpty()) {
             ok = false;
             return false;
         }
         String[] conf = configuration();
         String first = conf[0];
-        if(first == null){
+        if (first == null) {
             ok = true;
             return false;
         }
-        for(int i = 0; i < conf.length; i++){
-            if(conf[i] == null || !conf[i].equals(first)){
+        for (int i = 0; i < conf.length; i++) {
+            if (conf[i] == null || !conf[i].equals(first)) {
                 ok = true;
                 return false;
             }
@@ -419,12 +430,11 @@ public class SlotMachine {
      * Verifies the jackpot status and changes the color of the top and base housing:
      * magenta on jackpot win, gold otherwise.
      */
-     
-    private void checkJackPot(){
-        if(isJackpot()){
+    private void checkJackPot() {
+        if (isJackpot()) {
             topRectangle.changeColor("magenta");
             baseRectangle.changeColor("magenta");
-        } else{
+        } else {
             topRectangle.changeColor("gold");
             baseRectangle.changeColor("gold");
         }
@@ -433,26 +443,24 @@ public class SlotMachine {
     /**
      * Makes all graphical components of the slot machine visible on the canvas.
      */
-     
-    public void makeVisible(){
+    public void makeVisible() {
         topRectangle.makeVisible();
         middleRectangle.makeVisible();
         baseRectangle.makeVisible();
-        for(Wheel i : wheelList){
+        for (Wheel i : wheelList) {
             i.makeVisible();
         }
         ok = true;
     }
-    
+
     /**
      * Hides all graphical components of the slot machine from the canvas.
      */
-     
     public void makeInvisible() {
         topRectangle.makeInvisible();
         middleRectangle.makeInvisible();
         baseRectangle.makeInvisible();
-        for(Wheel i : wheelList){
+        for (Wheel i : wheelList) {
             i.makeInvisible();
         }
         ok = true;
@@ -461,7 +469,6 @@ public class SlotMachine {
     /**
      * Exits the slot machine application.
      */
-     
     public void exit() {
         System.exit(0);
     }
@@ -471,7 +478,6 @@ public class SlotMachine {
      * 
      * @return {@code true} if the last operation succeeded, {@code false} otherwise.
      */
-     
     public boolean ok() {
         return ok;
     }

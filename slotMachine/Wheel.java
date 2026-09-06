@@ -7,9 +7,8 @@ import java.util.ArrayList;
  * 
  * @author Mateo
  * @author Maria Angelica
- * @version 23/08/26
+ * @version 27/08/26
  */
- 
 public class Wheel {
     private static final int HEIGHT = 120;
     private static final int WIDTH = 40;
@@ -27,7 +26,6 @@ public class Wheel {
      * @param x The initial X-coordinate on the canvas.
      * @param y The initial Y-coordinate on the canvas.
      */
-     
     public Wheel(int x, int y) {
         wheel = new Rectangle();
         symbols = new ArrayList<>();
@@ -46,7 +44,6 @@ public class Wheel {
      * 
      * @param distance The distance in pixels to move horizontally (positive moves right, negative moves left).
      */
-     
     public void moveHorizontal(int distance) {
         wheel.moveHorizontal(distance);
     }
@@ -54,59 +51,73 @@ public class Wheel {
     /** 
      * Hides the wheel by making its visual representation invisible on the canvas.
      */
-     
     public void makeInvisible() {
         wheel.makeInvisible();
     }
-    
+
     /**
      * Adds a symbol (color) to the wheel at the specified index.
      * If this is the first symbol added, it is automatically set as the current visible symbol.
+     * If it's inserted at or before the currently visible symbol, the current index shifts
+     * accordingly so the wheel keeps showing the same symbol it was showing before.
      * 
      * @param index The 0-based position where the symbol should be inserted.
      * @param color The name or value of the color representing the symbol.
      */
-     
-    public void addSymbol(int index, String color){
+    public void addSymbol(int index, String color) {
         symbols.add(index, color);
-        if(currentIndex == -1) currentIndex = 0;
+        if (currentIndex == -1) {
+            currentIndex = 0;
+        } else if (index <= currentIndex) {
+            currentIndex++;
+        }
         showCurrentSymbol();
     }
-    
+
     /**
      * Removes the first occurrence of a symbol (color) from the wheel.
-     * Updates the current visible index and visual display accordingly.
+     * If the removed symbol was the one being shown (or was before it), the wheel falls
+     * back to showing the symbol that is now in its place (the previous one).
      * 
      * @param color The name or value of the color symbol to remove.
      */
-     
-    public void delSymbol(String color){
+    public void delSymbol(String color) {
         int index = symbols.indexOf(color);
-        if(index == -1) return;
+        if (index == -1) return;
+
         symbols.remove(index);
-        if(symbols.isEmpty()) currentIndex = -1;
-        else if (currentIndex >= symbols.size()) currentIndex = symbols.size() -1;
+
+        if (symbols.isEmpty()) {
+            currentIndex = -1;
+        } else {
+            if (index <= currentIndex) {
+                currentIndex--;
+            }
+            if (currentIndex < 0) {
+                currentIndex = 0;
+            } else if (currentIndex >= symbols.size()) {
+                currentIndex = symbols.size() - 1;
+            }
+        }
         showCurrentSymbol();
     }
-    
+
     /**
      * Repaints the visual rectangle to reflect the current visible symbol.
      * Displays gray if no symbol is selected or available.
      */
-     
-    private void showCurrentSymbol(){
+    private void showCurrentSymbol() {
         wheel.changeColor(currentIndex == -1 ? "gray" : symbols.get(currentIndex));
     }
-    
+
     /**
      * Sets the visible symbol of the wheel to the specified color if it exists in the symbol list.
      * 
      * @param color The name of the color symbol to display.
      */
-     
-    public void setSymbol(String color){
+    public void setSymbol(String color) {
         int index = symbols.indexOf(color);
-        if(index == -1) return;
+        if (index == -1) return;
         currentIndex = index;
         showCurrentSymbol();
     }
@@ -114,7 +125,6 @@ public class Wheel {
     /**
      * Makes the wheel visible on the canvas.
      */
-     
     public void makeVisible() {
         wheel.makeVisible();
     }
@@ -125,12 +135,11 @@ public class Wheel {
      * 
      * @param x The number of positions to rotate.
      */
-     
-    public void rotate(int x){
-        if(symbols.isEmpty()) return;
-        currentIndex = (currentIndex +x) % symbols.size();
-        if(currentIndex < 0){
-            currentIndex = (currentIndex + symbols.size()) % symbols.size();            
+    public void rotate(int x) {
+        if (symbols.isEmpty()) return;
+        currentIndex = (currentIndex + x) % symbols.size();
+        if (currentIndex < 0) {
+            currentIndex = (currentIndex + symbols.size()) % symbols.size();
         }
         showCurrentSymbol();
     }
@@ -140,11 +149,11 @@ public class Wheel {
      * 
      * @return The color of the visible symbol, or {@code null} if no symbols exist.
      */
-     
-    public String getVisibleSymbol(){
-        if(currentIndex == -1 || symbols.isEmpty()){
-            return null; 
-        } return symbols.get(currentIndex);
+    public String getVisibleSymbol() {
+        if (currentIndex == -1 || symbols.isEmpty()) {
+            return null;
+        }
+        return symbols.get(currentIndex);
     }
 
     /**
@@ -152,9 +161,8 @@ public class Wheel {
      * 
      * @return The 1-based index position of the visible symbol, or 0 if no symbol is selected.
      */
-     
-    public int getIndicator(){
-        return currentIndex +1;
+    public int getIndicator() {
+        return currentIndex + 1;
     }
 
     /**
@@ -162,8 +170,7 @@ public class Wheel {
      * 
      * @return The number of symbols in the wheel.
      */
-     
-    public int size(){
+    public int size() {
         return symbols.size();
     }
 }
