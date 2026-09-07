@@ -18,6 +18,8 @@ public class Wheel {
     private Rectangle wheel;
     private ArrayList<String> symbols;
     private int currentIndex = -1;
+    
+    private boolean locked = false;
 
     /**
      * Constructs a new Wheel at the specified coordinates on the canvas.
@@ -172,5 +174,30 @@ public class Wheel {
      */
     public int size() {
         return symbols.size();
+    }
+    
+    public void lock(){
+        locked = true;
+    }
+    
+    public void unlock(){
+        locked = false;
+    }
+    
+    public boolean isLocked(){
+        return locked;
+    }
+    
+    public void rotate(int steps, boolean animate){
+        if (symbols.isEmpty())return;
+        for (int i = 0; i < steps; i++){
+            currentIndex = (currentIndex + 1) % symbols.size();
+            if(animate){
+                showCurrentSymbol();
+            }
+        }
+        if(!animate){
+            showCurrentSymbol();
+        }
     }
 }
