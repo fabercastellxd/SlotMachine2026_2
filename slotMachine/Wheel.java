@@ -2,12 +2,14 @@ import java.util.ArrayList;
 
 /**
  * Represents an individual wheel (reel) in a slot machine.
- * Each wheel manages a circular list of symbols (represented as color strings)
- * and its visual representation as a rectangle displaying the currently visible symbol.
- * 
- * @author Mateo
- * @author Maria Angelica
- * @version 27/08/26
+ * Visually, the wheel is a fixed-size window on the canvas through which
+ * two stacked color blocks scroll vertically to simulate a real slot reel:
+ * one block holds the currently visible symbol and the other holds the
+ * incoming symbol during an animated spin.
+ *
+ * @author Mateo Sanchez
+ * @author Maria Angelica Perez
+ * @version 09/09/26
  */
 public class Wheel {
     private static final int HEIGHT = 120;
@@ -15,54 +17,83 @@ public class Wheel {
     private static final int DEFAULT_X = 70;
     private static final int DEFAULT_Y = 15;
 
-    private Rectangle wheel;
+    /** Pixels moved per animation frame; smaller = smoother but slower. */
+    private static final int SCROLL_STEP_PX = 15;
+
+    private Rectangle currentBlock;
+    private Rectangle nextBlock;
     private ArrayList<String> symbols;
     private int currentIndex = -1;
-    
+
     private boolean locked = false;
+
+    private int windowX;
+    private int windowY;
+    private int currentBlockY;
+    private int nextBlockY;
 
     /**
      * Constructs a new Wheel at the specified coordinates on the canvas.
-     * Initializes an empty list of symbols and sets the default visual color to gray.
-     * 
+     *
      * @param x The initial X-coordinate on the canvas.
      * @param y The initial Y-coordinate on the canvas.
      */
     public Wheel(int x, int y) {
-        wheel = new Rectangle();
         symbols = new ArrayList<>();
-        wheel.changeSize(HEIGHT, WIDTH);
-        wheel.changeColor("gray");
+        windowX = x;
+        windowY = y;
 
-        wheel.moveHorizontal(x - DEFAULT_X);
-        wheel.moveVertical(y - DEFAULT_Y);
+        currentBlock = new Rectangle();
+        currentBlock.changeSize(HEIGHT, WIDTH);
+        currentBlock.changeColor("gray");
+        currentBlock.moveHorizontal(x - DEFAULT_X);
+        currentBlock.moveVertical(y - DEFAULT_Y);
+        currentBlockY = y;
+        currentBlock.setClip(windowX, windowY, WIDTH, HEIGHT);
+        currentBlock.makeVisible();
 
-        wheel.makeVisible();
+        nextBlock = new Rectangle();
+        nextBlock.changeSize(HEIGHT, WIDTH);
+        nextBlock.changeColor("gray");
+        nextBlock.moveHorizontal(x - DEFAULT_X);
+        nextBlock.moveVertical(y - DEFAULT_Y);
+        nextBlockY = y;
+        nextBlock.setClip(windowX, windowY, WIDTH, HEIGHT);
+        // nextBlock queda invisible hasta que un giro animado lo necesite
     }
 
-    /** 
-     * Moves the wheel horizontally by a given distance.
-     * Useful when resizing or repositioning the slot machine structure.
-     * 
-     * @param distance The distance in pixels to move horizontally (positive moves right, negative moves left).
+    /**
+     * Moves the wheel horizontally by a given distance, keeping the
+     * visible window (clip) aligned with both blocks.
+     *
+     * @param distance The distance in pixels to move horizontally.
      */
     public void moveHorizontal(int distance) {
-        wheel.moveHorizontal(distance);
+        currentBlock.moveHorizontal(distance);
+        nextBlock.moveHorizontal(distance);
+        windowX += distance;
+        updateClip();
     }
 
-    /** 
-     * Hides the wheel by making its visual representation invisible on the canvas.
-     */
+    private void updateClip() {
+        currentBlock.setClip(windowX, windowY, WIDTH, HEIGHT);
+        nextBlock.setClip(windowX, windowY, WIDTH, HEIGHT);
+    }
+
+    /** Hides both blocks of the wheel. */
     public void makeInvisible() {
-        wheel.makeInvisible();
+        currentBlock.makeInvisible();
+        nextBlock.makeInvisible();
+    }
+
+    /** Makes the visible block of the wheel visible again. */
+    public void makeVisible() {
+        currentBlock.makeVisible();
     }
 
     /**
      * Adds a symbol (color) to the wheel at the specified index.
-     * If this is the first symbol added, it is automatically set as the current visible symbol.
-     * If it's inserted at or before the currently visible symbol, the current index shifts
-     * accordingly so the wheel keeps showing the same symbol it was showing before.
-     * 
+     *
      * @param index The 0-based position where the symbol should be inserted.
      * @param color The name or value of the color representing the symbol.
      */
@@ -78,9 +109,7 @@ public class Wheel {
 
     /**
      * Removes the first occurrence of a symbol (color) from the wheel.
-     * If the removed symbol was the one being shown (or was before it), the wheel falls
-     * back to showing the symbol that is now in its place (the previous one).
-     * 
+     *
      * @param color The name or value of the color symbol to remove.
      */
     public void delSymbol(String color) {
@@ -105,16 +134,27 @@ public class Wheel {
     }
 
     /**
-     * Repaints the visual rectangle to reflect the current visible symbol.
-     * Displays gray if no symbol is selected or available.
+     * Instantly repaints the window with the current symbol's color,
+     * with no scroll animation. Used whenever the change doesn't need
+     * (or isn't allowed) to be animated.
      */
     private void showCurrentSymbol() {
-        wheel.changeColor(currentIndex == -1 ? "gray" : symbols.get(currentIndex));
+        String color = currentIndex == -1 ? "gray" : symbols.get(currentIndex);
+        moveBlockTo(currentBlock, currentBlockY, windowY);
+        currentBlockY = windowY;
+        currentBlock.changeColor(color);
+        nextBlock.makeInvisible();
+    }
+
+    private void moveBlockTo(Rectangle block, int fromY, int toY) {
+        if (fromY != toY) {
+            block.moveVertical(toY - fromY);
+        }
     }
 
     /**
-     * Sets the visible symbol of the wheel to the specified color if it exists in the symbol list.
-     * 
+     * Sets the visible symbol of the wheel to the specified color if it exists.
+     *
      * @param color The name of the color symbol to display.
      */
     public void setSymbol(String color) {
@@ -125,16 +165,9 @@ public class Wheel {
     }
 
     /**
-     * Makes the wheel visible on the canvas.
-     */
-    public void makeVisible() {
-        wheel.makeVisible();
-    }
-
-    /**
-     * Rotates the visible symbol by shifting {@code x} positions in the circular list.
-     * Supports both positive (forward) and negative (backward) steps.
-     * 
+     * Rotates the visible symbol by shifting {@code x} positions, instantly
+     * (no scroll animation). Supports both positive and negative steps.
+     *
      * @param x The number of positions to rotate.
      */
     public void rotate(int x) {
@@ -147,8 +180,70 @@ public class Wheel {
     }
 
     /**
+     * Rotates the wheel forward {@code steps} positions. When {@code animate}
+     * is true, each step is shown as a vertical scroll (the outgoing symbol
+     * slides up and out while the incoming one slides up into view).
+     *
+     * @param steps   number of forward steps to rotate.
+     * @param animate whether to show the scroll animation for each step.
+     */
+    public void rotate(int steps, boolean animate) {
+        if (symbols.isEmpty()) return;
+        for (int i = 0; i < steps; i++) {
+            if (animate) {
+                animateOneStepForward();
+            } else {
+                currentIndex = (currentIndex + 1) % symbols.size();
+            }
+        }
+        if (!animate) {
+            showCurrentSymbol();
+        }
+    }
+
+    /**
+     * Performs one full scroll cycle: brings in the next symbol from below
+     * while the current one exits above, then swaps the block roles so the
+     * wheel is ready for the next step.
+     */
+    private void animateOneStepForward() {
+        int previousIndex = currentIndex;
+        int newIndex = (currentIndex + 1) % symbols.size();
+
+        moveBlockTo(currentBlock, currentBlockY, windowY);
+        currentBlockY = windowY;
+        currentBlock.changeColor(previousIndex == -1 ? "gray" : symbols.get(previousIndex));
+
+        moveBlockTo(nextBlock, nextBlockY, windowY + HEIGHT);
+        nextBlockY = windowY + HEIGHT;
+        nextBlock.changeColor(symbols.get(newIndex));
+        nextBlock.makeVisible();
+
+        int remaining = HEIGHT;
+        while (remaining > 0) {
+            int delta = Math.min(SCROLL_STEP_PX, remaining);
+            currentBlock.moveVertical(-delta);
+            currentBlockY -= delta;
+            nextBlock.moveVertical(-delta);
+            nextBlockY -= delta;
+            remaining -= delta;
+        }
+
+        currentBlock.makeInvisible();
+        Rectangle exited = currentBlock;
+        int exitedY = currentBlockY;
+        currentBlock = nextBlock;
+        currentBlockY = nextBlockY;
+        nextBlock = exited;
+        nextBlockY = exitedY;
+        nextBlock.makeInvisible();
+
+        currentIndex = newIndex;
+    }
+
+    /**
      * Returns the color name of the currently visible symbol.
-     * 
+     *
      * @return The color of the visible symbol, or {@code null} if no symbols exist.
      */
     public String getVisibleSymbol() {
@@ -159,9 +254,9 @@ public class Wheel {
     }
 
     /**
-     * Returns the 1-based indicator position of the currently visible symbol within the wheel.
-     * 
-     * @return The 1-based index position of the visible symbol, or 0 if no symbol is selected.
+     * Returns the 1-based indicator position of the currently visible symbol.
+     *
+     * @return The 1-based index position of the visible symbol, or 0 if none.
      */
     public int getIndicator() {
         return currentIndex + 1;
@@ -169,35 +264,22 @@ public class Wheel {
 
     /**
      * Returns the total number of symbols in this wheel.
-     * 
+     *
      * @return The number of symbols in the wheel.
      */
     public int size() {
         return symbols.size();
     }
-    
+
     public void lock(){
         locked = true;
     }
-    
+
     public void unlock(){
         locked = false;
     }
-    
+
     public boolean isLocked(){
         return locked;
-    }
-    
-    public void rotate(int steps, boolean animate){
-        if (symbols.isEmpty())return;
-        for (int i = 0; i < steps; i++){
-            currentIndex = (currentIndex + 1) % symbols.size();
-            if(animate){
-                showCurrentSymbol();
-            }
-        }
-        if(!animate){
-            showCurrentSymbol();
-        }
     }
 }

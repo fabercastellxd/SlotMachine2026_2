@@ -84,22 +84,24 @@ public class Canvas{
         frame.setVisible(visible);
     }
 
+    public void draw(Object referenceObject, String color, Shape shape){
+        draw(referenceObject, color, shape, null);
+    }
+    
     /**
-     * Draw a given shape onto the canvas.
+     * Draw a given shape onto the canvas, optionally clipped to a region.
      * @param  referenceObject  an object to define identity for this shape
      * @param  color            the color of the shape
      * @param  shape            the shape object to be drawn on the canvas
+     * @param  clip             the visible region for this shape, or null for no clipping
      */
-     // Note: this is a slightly backwards way of maintaining the shape
-     // objects. It is carefully designed to keep the visible shape interfaces
-     // in this project clean and simple for educational purposes.
-    public void draw(Object referenceObject, String color, Shape shape){
-        objects.remove(referenceObject);   // just in case it was already there
-        objects.add(referenceObject);      // add at the end
-        shapes.put(referenceObject, new ShapeDescription(shape, color));
+    public void draw(Object referenceObject, String color, Shape shape, Shape clip){
+        objects.remove(referenceObject);
+        objects.add(referenceObject);
+        shapes.put(referenceObject, new ShapeDescription(shape, color, clip));
         redraw();
     }
- 
+    
     /**
      * Erase a given shape's from the screen.
      * @param  referenceObject  the shape object to be erased 
@@ -193,18 +195,25 @@ public class Canvas{
      * refresh the image drawn on it.
      */
     private class ShapeDescription{
-        private Shape shape;
-        private String colorString;
+    private Shape shape;
+    private String colorString;
+    private Shape clip;
 
-        public ShapeDescription(Shape shape, String color){
-            this.shape = shape;
-            colorString = color;
-        }
-
-        public void draw(Graphics2D graphic){
-            setForegroundColor(colorString);
-            graphic.draw(shape);
-            graphic.fill(shape);
-        }
+    public ShapeDescription(Shape shape, String color, Shape clip){
+        this.shape = shape;
+        colorString = color;
+        this.clip = clip;
     }
+
+    public void draw(Graphics2D graphic){
+        setForegroundColor(colorString);
+        Shape oldClip = graphic.getClip();
+        if (clip != null) {
+            graphic.setClip(clip);
+        }
+        graphic.draw(shape);
+        graphic.fill(shape);
+        graphic.setClip(oldClip);
+    }
+}
 }

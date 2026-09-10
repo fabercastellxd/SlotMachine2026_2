@@ -351,7 +351,7 @@ public class SlotMachine {
         }
         Random r = new Random();
         int turns = r.nextInt(15) + 1;
-        target.rotate(turns);
+        target.rotate(turns, visible);
         checkJackPot();
         ok = true;
     }
@@ -368,7 +368,7 @@ public class SlotMachine {
         for (Wheel i : wheelList) {
             if(!i.isLocked()){
             int turns = r.nextInt(15) + 1;
-            i.rotate(turns);
+            i.rotate(turns, visible);
             }
         }
         checkJackPot();

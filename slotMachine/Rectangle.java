@@ -1,5 +1,4 @@
 import java.awt.*;
-
 /**
  * A rectangle that can be manipulated and that draws itself on a canvas.
  * 
@@ -167,8 +166,8 @@ public class Rectangle{
         if(isVisible) {
             Canvas canvas = Canvas.getCanvas();
             canvas.draw(this, color,
-                new java.awt.Rectangle(xPosition, yPosition, 
-                                       width, height));
+                new java.awt.Rectangle(xPosition, yPosition, width, height),
+                clipBounds);
             canvas.wait(10);
         }
     }
@@ -181,6 +180,23 @@ public class Rectangle{
             Canvas canvas = Canvas.getCanvas();
             canvas.erase(this);
         }
+    }
+    private java.awt.Rectangle clipBounds = null;
+
+    /**
+     * Restricts this rectangle's visible area to the given region on the canvas.
+     * Useful for scroll effects: the shape can move freely while only the
+     * portion inside this region is actually painted.
+     */
+    public void setClip(int x, int y, int width, int height){
+        clipBounds = new java.awt.Rectangle(x, y, width, height);
+        draw();
+    }
+    
+    /** Removes any clipping region, making the whole shape visible again. */
+    public void clearClip(){
+        clipBounds = null;
+        draw();
     }
 }
 
