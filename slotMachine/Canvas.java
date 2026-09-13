@@ -21,17 +21,21 @@ public class Canvas{
 
     private static Canvas canvasSingleton;
     public static Canvas getCanvas(){
-        return getCanvas(500, 500);
+    return getCanvas(500, 500, true);
+    }
+    
+    public static Canvas getCanvas(int width, int height){
+    return getCanvas(width, height, true);
     }
     /**
      * Nuevo constructor para manejar las dimensiones a corde a la cantidad de ruedas
      */
-    public static Canvas getCanvas(int width, int height){
-        if(canvasSingleton == null) {
-            canvasSingleton = new Canvas("BlueJ Shapes Demo", width, height, Color.white);
-        }
-        canvasSingleton.setVisible(true);
-        return canvasSingleton;
+    public static Canvas getCanvas(int width, int height, boolean makeVisible){
+    if(canvasSingleton == null) {
+        canvasSingleton = new Canvas("BlueJ Shapes Demo", width, height, Color.white);
+        canvasSingleton.setVisible(makeVisible);
+    }
+    return canvasSingleton;
     }
 
     //  ----- instance part -----

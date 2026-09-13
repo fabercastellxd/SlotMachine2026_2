@@ -7,10 +7,10 @@ import java.util.Random;
  * The machine manages a dynamic set of wheels (between {@link #MIN_WHEELS} and {@link #MAX_WHEELS}),
  * a collection of distinct symbols (represented as colors), graphical elements (top, middle, and base rectangles),
  * and game state operations such as spinning, jackpot verification, and visibility toggling.
- * 
- * @author Mateo
- * @author Maria Angelica
- * @version 27/08/26
+ *
+ * @author Mateo Sanchez
+ * @author Maria Angelica Perez
+ * @version 12/09/26
  */
 public class SlotMachine {
 
@@ -54,12 +54,12 @@ public class SlotMachine {
     private int middleWidth;
     private int topWidth;
     private int baseWidth;
-    
-    private boolean visible = true;
+
+    private boolean visible;
 
     /**
      * Calculates the width of the middle section housing the given number of wheels.
-     * 
+     *
      * @param numWheels The number of wheels.
      * @return The calculated width in pixels.
      */
@@ -68,12 +68,25 @@ public class SlotMachine {
     }
 
     /**
-     * Constructs and initializes a new SlotMachine instance.
-     * Sets up the canvas, initializes default wheels ({@link #MIN_WHEELS}), builds the machine structure
-     * (top, middle, base), and renders all components visibly.
+     * Constructs a new SlotMachine that starts visible, as usual.
      */
     public SlotMachine() {
-        Canvas.getCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+        this(true);
+    }
+
+    /**
+     * Constructs and initializes a new SlotMachine instance.
+     * Sets up the canvas, initializes default wheels ({@link #MIN_WHEELS}), builds the machine structure
+     * (top, middle, base), and renders all components visibly if requested.
+     *
+     * @param startVisible whether the canvas window should be shown immediately;
+     *                     pass false to run the machine fully invisible from the
+     *                     start (used by unit tests, so the window never appears
+     *                     at all, not even briefly).
+     */
+    public SlotMachine(boolean startVisible) {
+        Canvas.getCanvas(CANVAS_WIDTH, CANVAS_HEIGHT, startVisible);
+        visible = startVisible;
 
         wheelList = new ArrayList<>();
         symbols = new ArrayList<>();
@@ -110,7 +123,7 @@ public class SlotMachine {
     /**
      * Recalculates the dimensions for the middle, top, and base sections of the machine
      * based on the specified number of wheels.
-     * 
+     *
      * @param numWheels The current number of wheels.
      */
     private void updateWidths(int numWheels) {
@@ -121,7 +134,7 @@ public class SlotMachine {
 
     /**
      * Positions a given rectangle centered along the horizontal axis {@code CENTER_X} at coordinate {@code y}.
-     * 
+     *
      * @param r The rectangle to position.
      * @param width The current width of the rectangle.
      * @param y The Y-coordinate for the rectangle.
@@ -132,9 +145,9 @@ public class SlotMachine {
         r.moveVertical(y - DEFAULT_Y);
     }
 
-    /** 
+    /**
      * Computes the horizontal coordinate (X) for a wheel based on its 1-indexed position.
-     * 
+     *
      * @param index The 1-based index of the wheel.
      * @return The X-coordinate where the wheel should be placed.
      */
@@ -143,9 +156,9 @@ public class SlotMachine {
         return xStartMiddle + MARGIN + (index - 1) * (WHEEL_WIDTH + WHEEL_SPACING);
     }
 
-    /** 
+    /**
      * Resizes the housing rectangles and repositions all existing wheels to keep them centered.
-     * 
+     *
      * @param oldMiddleWidth The previous width of the middle section.
      * @param oldBaseWidth The previous width of the base section.
      */
@@ -170,7 +183,7 @@ public class SlotMachine {
     /**
      * Adds {@code pos} new wheels to the slot machine, all at once.
      * The whole operation fails (nothing is added) if the resulting total would exceed {@link #MAX_WHEELS}.
-     * 
+     *
      * @param pos The number of wheels to add.
      */
     public void addWheel(int pos) {
@@ -216,7 +229,7 @@ public class SlotMachine {
     /**
      * Removes {@code pos} wheels from the slot machine, all at once.
      * The whole operation fails (nothing is removed) if the resulting total would go below {@link #MIN_WHEELS}.
-     * 
+     *
      * @param pos The number of wheels to remove.
      */
     public void delWheel(int pos) {
@@ -254,7 +267,7 @@ public class SlotMachine {
 
     /**
      * Returns the total number of wheels currently present in the slot machine.
-     * 
+     *
      * @return The number of wheels.
      */
     public int getWheels() {
@@ -264,7 +277,7 @@ public class SlotMachine {
     /**
      * Adds a new symbol (color) at the specified position and inserts it across all wheels.
      * If the color already exists in the machine, the operation fails and {@link #ok()} will return {@code false}.
-     * 
+     *
      * @param pos 1-based target insertion index for the symbol.
      * @param color The name of the color symbol to add.
      */
@@ -284,7 +297,7 @@ public class SlotMachine {
     /**
      * Removes a symbol (color) from the slot machine and from every wheel.
      * If the symbol is not found, the operation fails and {@link #ok()} will return {@code false}.
-     * 
+     *
      * @param color The name of the color symbol to remove.
      */
     public void delSymbol(String color) {
@@ -302,7 +315,7 @@ public class SlotMachine {
 
     /**
      * Clamps a position value to ensure it lies strictly within the range {@code [1, max]}.
-     * 
+     *
      * @param pos The raw position input.
      * @param max The maximum allowable value.
      * @return The clamped position within {@code [1, max]}.
@@ -316,7 +329,7 @@ public class SlotMachine {
     /**
      * Manually sets the visible symbol on a specific wheel.
      * Checks if the symbol is valid and triggers jackpot verification.
-     * 
+     *
      * @param wheel 1-based index of the target wheel.
      * @param symbol The color symbol to display.
      */
@@ -334,8 +347,8 @@ public class SlotMachine {
 
     /**
      * Randomly spins a specific wheel by rotating it a random number of steps (1 to 15)
-     * and checks for a jackpot condition.
-     * 
+     * and checks for a jackpot condition. Fails if the wheel is locked.
+     *
      * @param wheel 1-based index of the wheel to spin.
      */
     public void spin(int wheel) {
@@ -345,7 +358,7 @@ public class SlotMachine {
         }
         int index = clamPos(wheel, wheelList.size()) - 1;
         Wheel target = wheelList.get(index);
-        if(target.isLocked()){
+        if (target.isLocked()) {
             ok = false;
             return;
         }
@@ -357,7 +370,7 @@ public class SlotMachine {
     }
 
     /**
-     * Randomly spins all wheels in the slot machine and checks for a jackpot condition.
+     * Randomly spins all unlocked wheels in the slot machine and checks for a jackpot condition.
      */
     public void spin() {
         if (wheelList.isEmpty() || symbols.isEmpty()) {
@@ -365,10 +378,10 @@ public class SlotMachine {
             return;
         }
         Random r = new Random();
-        for (Wheel i : wheelList) {
-            if(!i.isLocked()){
-            int turns = r.nextInt(15) + 1;
-            i.rotate(turns, visible);
+        for (Wheel w : wheelList) {
+            if (!w.isLocked()) {
+                int turns = r.nextInt(15) + 1;
+                w.rotate(turns, visible);
             }
         }
         checkJackPot();
@@ -377,7 +390,7 @@ public class SlotMachine {
 
     /**
      * Returns an array of all registered symbols in their insertion order.
-     * 
+     *
      * @return An array of symbol strings.
      */
     public String[] symbols() {
@@ -387,7 +400,7 @@ public class SlotMachine {
 
     /**
      * Returns the total count of distinct symbols registered in the machine.
-     * 
+     *
      * @return The number of distinct symbols.
      */
     public int distinctSymbols() {
@@ -397,7 +410,7 @@ public class SlotMachine {
 
     /**
      * Returns the array of visible symbols across all wheels from left to right.
-     * 
+     *
      * @return An array containing the visible symbol string of each wheel.
      */
     public String[] configuration() {
@@ -411,7 +424,7 @@ public class SlotMachine {
 
     /**
      * Determines whether the current configuration constitutes a jackpot (all visible symbols match).
-     * 
+     *
      * @return {@code true} if all wheels display identical non-null symbols; {@code false} otherwise.
      */
     public boolean isJackpot() {
@@ -457,8 +470,8 @@ public class SlotMachine {
         topRectangle.makeVisible();
         middleRectangle.makeVisible();
         baseRectangle.makeVisible();
-        for (Wheel i : wheelList) {
-            i.makeVisible();
+        for (Wheel w : wheelList) {
+            w.makeVisible();
         }
         ok = true;
     }
@@ -471,8 +484,8 @@ public class SlotMachine {
         topRectangle.makeInvisible();
         middleRectangle.makeInvisible();
         baseRectangle.makeInvisible();
-        for (Wheel i : wheelList) {
-            i.makeInvisible();
+        for (Wheel w : wheelList) {
+            w.makeInvisible();
         }
         ok = true;
     }
@@ -486,34 +499,35 @@ public class SlotMachine {
 
     /**
      * Returns the status of the last executed operation.
-     * 
+     *
      * @return {@code true} if the last operation succeeded, {@code false} otherwise.
      */
     public boolean ok() {
         return ok;
     }
-    
+
     /**
-     * Swaps the currently visible symbols between two wheels
-     * Fails if either wheel is locked
-     * @param wheel1 1-based index of the first wheel
-     * @param wheel1 1-based index of the second wheel
+     * Swaps the currently visible symbols between two wheels.
+     * Fails if either wheel is locked.
+     *
+     * @param wheel1 1-based index of the first wheel.
+     * @param wheel2 1-based index of the second wheel.
      */
-    public void swap(int wheel1, int wheel2){
-        if (wheelList.isEmpty()){
+    public void swap(int wheel1, int wheel2) {
+        if (wheelList.isEmpty()) {
             ok = false;
             return;
         }
-        int i1 = clamPos(wheel1, wheelList.size()) -1;
-        int i2 = clamPos(wheel2, wheelList.size()) -1;
+        int i1 = clamPos(wheel1, wheelList.size()) - 1;
+        int i2 = clamPos(wheel2, wheelList.size()) - 1;
         Wheel w1 = wheelList.get(i1);
         Wheel w2 = wheelList.get(i2);
-        
-        if(w1.isLocked() || w2.isLocked()){
+
+        if (w1.isLocked() || w2.isLocked()) {
             ok = false;
             return;
         }
-        
+
         String s1 = w1.getVisibleSymbol();
         String s2 = w2.getVisibleSymbol();
         w1.setSymbol(s2);
@@ -521,35 +535,37 @@ public class SlotMachine {
         checkJackPot();
         ok = true;
     }
-    
+
     /**
-     * Locks a wheel, protecting it from any spin operation
-     * @param wheel 1-based index of the wheel  to lock
+     * Locks a wheel, protecting it from any spin or swap operation.
+     *
+     * @param wheel 1-based index of the wheel to lock.
      */
-    public void lock(int wheel){
-        if (wheelList.isEmpty()){
+    public void lock(int wheel) {
+        if (wheelList.isEmpty()) {
             ok = false;
             return;
         }
-        int index = clamPos(wheel, wheelList.size()) -1;
+        int index = clamPos(wheel, wheelList.size()) - 1;
         wheelList.get(index).lock();
         ok = true;
     }
-    
+
     /**
-     * Unlocks a wheel, letting it spin normally again
-     * @param wheel 1-based index of the wheel to unlock
+     * Unlocks a wheel, letting it spin or swap normally again.
+     *
+     * @param wheel 1-based index of the wheel to unlock.
      */
-    public void unlock(int wheel){
-        if (wheelList.isEmpty()){
+    public void unlock(int wheel) {
+        if (wheelList.isEmpty()) {
             ok = false;
             return;
         }
-        int index = clamPos(wheel, wheelList.size()) -1;
+        int index = clamPos(wheel, wheelList.size()) - 1;
         wheelList.get(index).unlock();
         ok = true;
     }
-    
+
     /**
      * Rotates a specific wheel by an exact number of steps (not random).
      * If the machine is visible, the rotation is shown step by step.
@@ -558,23 +574,22 @@ public class SlotMachine {
      * @param wheel 1-based index of the wheel to spin.
      * @param steps number of forward steps to rotate.
      */
-    public void spin(int wheel, int steps){
-        if(wheelList.isEmpty() || symbols.isEmpty()){
-            ok = false;
-             return;
-        }
-        int index = clamPos(wheel, wheelList.size()) -1;
-        Wheel target = wheelList.get(index);
-        if (target.isLocked()){
+    public void spin(int wheel, int steps) {
+        if (wheelList.isEmpty() || symbols.isEmpty()) {
             ok = false;
             return;
         }
-        
+        int index = clamPos(wheel, wheelList.size()) - 1;
+        Wheel target = wheelList.get(index);
+        if (target.isLocked()) {
+            ok = false;
+            return;
+        }
         target.rotate(steps, visible);
         checkJackPot();
         ok = true;
     }
-    
+
     /**
      * Leaves the machine showing exactly the given configuration: wheel i displays
      * setSymbols[i-1]. Fails entirely if the array length doesn't match the current
@@ -583,19 +598,19 @@ public class SlotMachine {
      *
      * @param setSymbols desired visible symbol for each wheel, left to right.
      */
-    public void spin(String[] setSymbols){
-        if (setSymbols == null || setSymbols.length != wheelList.size()){
+    public void spin(String[] setSymbols) {
+        if (setSymbols == null || setSymbols.length != wheelList.size()) {
             ok = false;
             return;
         }
-        for(String s : setSymbols){
-            if(!symbols.contains(s)){
+        for (String s : setSymbols) {
+            if (!symbols.contains(s)) {
                 ok = false;
                 return;
             }
         }
-        for(int i = 0; i < wheelList.size(); i++){
-            if(!wheelList.get(i).isLocked()){
+        for (int i = 0; i < wheelList.size(); i++) {
+            if (!wheelList.get(i).isLocked()) {
                 wheelList.get(i).setSymbol(setSymbols[i]);
             }
         }

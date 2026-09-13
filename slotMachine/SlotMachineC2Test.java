@@ -1,11 +1,11 @@
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 /**
- * Casos de prueba de unidad del Ciclo 2: intercambio de ruedas (req. 9),
- * fijar/soltar rueda (req. 10), rotación exacta (req. 11) y configuración
- * forzada (req. 12). Todas las pruebas corren en modo invisible.
+ * Unit test cases for the whole slotMachine project (cycles 1 and 2).
+ * Every test runs with the canvas window fully hidden ({@code new SlotMachine(false)}),
+ * so no window ever appears during the test run.
  *
  * @author Mateo Sanchez
  * @author Maria Angelica Perez
@@ -16,16 +16,113 @@ public class SlotMachineC2Test {
 
     @BeforeEach
     public void setUp() {
-        machine = new SlotMachine();
-        machine.makeInvisible();
+        machine = new SlotMachine(false);
         machine.addSymbol(1, "red");
         machine.addSymbol(2, "blue");
         machine.addSymbol(3, "green");
     }
 
-    // ---------- Requisito 9: swap ----------
+    // ---------- Requirement 1: create a slot machine ----------
 
-    /** Que debería hacer: intercambiar los símbolos visibles de dos ruedas. */
+    /** Should: start with exactly MIN_WHEELS wheels. */
+    @Test
+    public void constructorShouldStartWithMinimumWheels() {
+        assertEquals(SlotMachine.MIN_WHEELS, machine.getWheels());
+    }
+
+    // ---------- Requirement 2: add / delete wheels ----------
+
+    /** Should: add the exact number of wheels requested. */
+    @Test
+    public void addWheelShouldAddExactAmountRequested() {
+        int before = machine.getWheels();
+        machine.addWheel(5);
+        assertEquals(before + 5, machine.getWheels());
+        assertTrue(machine.ok());
+    }
+
+    /** Should not: add wheels beyond MAX_WHEELS; nothing should change. */
+    @Test
+    public void addWheelShouldFailWhenExceedingMaximum() {
+        int before = machine.getWheels();
+        machine.addWheel(SlotMachine.MAX_WHEELS);
+        assertEquals(before, machine.getWheels());
+        assertFalse(machine.ok());
+    }
+
+    /** Should: remove the exact number of wheels requested. */
+    @Test
+    public void delWheelShouldRemoveExactAmountRequested() {
+        machine.addWheel(5);
+        int before = machine.getWheels();
+        machine.delWheel(2);
+        assertEquals(before - 2, machine.getWheels());
+        assertTrue(machine.ok());
+    }
+
+    /** Should not: remove wheels below MIN_WHEELS; nothing should change. */
+    @Test
+    public void delWheelShouldFailWhenGoingBelowMinimum() {
+        int before = machine.getWheels();
+        machine.delWheel(before); // would leave 0 wheels
+        assertEquals(before, machine.getWheels());
+        assertFalse(machine.ok());
+    }
+
+    // ---------- Requirement 3: add / delete symbols ----------
+
+    /** Should: register a new color in the machine's catalog. */
+    @Test
+    public void addSymbolShouldRegisterNewColor() {
+        machine.addSymbol(1, "yellow");
+        assertEquals(4, machine.distinctSymbols());
+        assertTrue(machine.ok());
+    }
+
+    /** Should not: register a color that already exists. */
+    @Test
+    public void addSymbolShouldFailWhenColorAlreadyExists() {
+        int before = machine.distinctSymbols();
+        machine.addSymbol(1, "red");
+        assertFalse(machine.ok());
+        assertEquals(before, machine.distinctSymbols());
+    }
+
+    /** Should: remove an existing color from the catalog. */
+    @Test
+    public void delSymbolShouldRemoveExistingColor() {
+        machine.delSymbol("red");
+        assertEquals(2, machine.distinctSymbols());
+        assertTrue(machine.ok());
+    }
+
+    /** Should not: remove a color that was never registered. */
+    @Test
+    public void delSymbolShouldFailWhenColorDoesNotExist() {
+        int before = machine.distinctSymbols();
+        machine.delSymbol("purple");
+        assertFalse(machine.ok());        
+        assertEquals(before, machine.distinctSymbols());
+    }
+
+    /** Should: manually set the visible symbol of a specific wheel. */
+    @Test
+    public void placeSymbolShouldSetVisibleSymbolOnTargetWheel() {
+        machine.placeSymbol(2, "green");
+        assertEquals("green", machine.configuration()[1]);
+        assertTrue(machine.ok());
+    }
+
+    /** Should not: accept a symbol that isn't in the machine's catalog. */
+    @Test
+    public void placeSymbolShouldFailWithUnknownSymbol() {
+        machine.placeSymbol(1, "purple");
+        assertFalse(machine.ok());
+    }
+
+    // ---------- Requirement 9: swap ----------
+
+    /** Should: exchange the visible symbols of two wheels. */
     @Test
     public void swapShouldExchangeVisibleSymbols() {
         machine.placeSymbol(1, "red");
@@ -37,39 +134,32 @@ public class SlotMachineC2Test {
         assertTrue(machine.ok());
     }
 
-    /** Que NO debería hacer: intercambiar si una de las ruedas está bloqueada. */
+    /** Should not: exchange symbols if either wheel is locked. */
     @Test
     public void swapShouldFailWhenAWheelIsLocked() {
         machine.placeSymbol(1, "red");
         machine.placeSymbol(2, "blue");
         machine.lock(1);
         machine.swap(1, 2);
-        boolean result = machine.ok();
+        assertFalse(machine.ok());
         String[] config = machine.configuration();
-        
-        assertFalse(result);
         assertEquals("red", config[0]);
         assertEquals("blue", config[1]);
     }
 
-    // ---------- Requisito 10: lock / unlock ----------
+    // ---------- Requirement 10: lock / unlock ----------
 
-    /** Que NO debería hacer: una rueda bloqueada no debe girar. */
+    /** Should not: allow a locked wheel to spin. */
     @Test
     public void lockShouldPreventWheelFromSpinning() {
         machine.placeSymbol(1, "red");
         machine.lock(1);
         machine.spin(1, 1);
-        
-        boolean result = machine.ok();
-        String[] config = machine.configuration();
-        
-        assertFalse(result);
-        assertEquals("red",config[0]);
-
+        assertFalse(machine.ok());
+        assertEquals("red", machine.configuration()[0]);
     }
 
-    /** Que debería hacer: tras desbloquear, la rueda vuelve a girar normalmente. */
+    /** Should: allow a wheel to spin again after being unlocked. */
     @Test
     public void unlockShouldAllowWheelToSpinAgain() {
         machine.placeSymbol(1, "red");
@@ -80,9 +170,9 @@ public class SlotMachineC2Test {
         assertTrue(machine.ok());
     }
 
-    // ---------- Requisito 11: spin(wheel, steps) ----------
+    // ---------- Requirement 11: spin(wheel, steps) ----------
 
-    /** Que debería hacer: avanzar exactamente la cantidad de pasos indicada. */
+    /** Should: advance exactly the requested number of steps. */
     @Test
     public void spinWithStepsShouldAdvanceExactAmount() {
         machine.placeSymbol(1, "red");
@@ -91,7 +181,7 @@ public class SlotMachineC2Test {
         assertTrue(machine.ok());
     }
 
-    /** Que debería hacer: la rotación es circular (vuelve al inicio tras el último símbolo). */
+    /** Should: wrap around circularly after the last symbol. */
     @Test
     public void spinWithStepsShouldWrapAroundCircularly() {
         machine.placeSymbol(1, "green");
@@ -100,18 +190,17 @@ public class SlotMachineC2Test {
         assertTrue(machine.ok());
     }
 
-    /** Que NO debería hacer: girar si la máquina no tiene símbolos registrados. */
+    /** Should not: spin when the machine has no symbols registered. */
     @Test
     public void spinWithStepsShouldFailWhenNoSymbolsExist() {
-        SlotMachine empty = new SlotMachine();
-        empty.makeInvisible();
+        SlotMachine empty = new SlotMachine(false);
         empty.spin(1, 1);
         assertFalse(empty.ok());
     }
 
-    // ---------- Requisito 12: spin(setSymbols) ----------
+    // ---------- Requirement 12: spin(setSymbols) ----------
 
-    /** Que debería hacer: dejar la máquina exactamente en la configuración pedida. */
+    /** Should: leave the machine exactly in the requested configuration. */
     @Test
     public void spinWithConfigurationShouldSetExactSymbols() {
         machine.spin(new String[]{"red", "blue", "green"});
@@ -119,21 +208,21 @@ public class SlotMachineC2Test {
         assertTrue(machine.ok());
     }
 
-    /** Que NO debería hacer: aceptar un arreglo con longitud distinta al número de ruedas. */
+    /** Should not: accept an array whose length doesn't match the wheel count. */
     @Test
     public void spinWithConfigurationShouldFailWithWrongLength() {
         machine.spin(new String[]{"red", "blue"});
         assertFalse(machine.ok());
     }
 
-    /** Que NO debería hacer: aceptar un símbolo que no existe en el catálogo. */
+    /** Should not: accept a symbol that isn't in the catalog. */
     @Test
     public void spinWithConfigurationShouldFailWithUnknownSymbol() {
         machine.spin(new String[]{"red", "blue", "purple"});
         assertFalse(machine.ok());
     }
 
-    /** Que debería hacer: respetar las ruedas bloqueadas, ignorando lo pedido para ellas. */
+    /** Should: keep locked wheels unchanged, ignoring what the array requests for them. */
     @Test
     public void spinWithConfigurationShouldRespectLockedWheels() {
         machine.placeSymbol(2, "blue");
@@ -142,4 +231,63 @@ public class SlotMachineC2Test {
         assertEquals("blue", machine.configuration()[1]);
         assertTrue(machine.ok());
     }
+
+    // ---------- Queries: symbols / distinctSymbols / configuration / isJackpot ----------
+
+    /** Should: return every registered symbol, in insertion order. */
+    @Test
+    public void symbolsShouldReturnCatalogInInsertionOrder() {
+        assertArrayEquals(new String[]{"red", "blue", "green"}, machine.symbols());
+    }
+
+    /** Should: return the total count of registered symbols. */
+    @Test
+    public void distinctSymbolsShouldReturnCatalogSize() {
+        assertEquals(3, machine.distinctSymbols());
+    }
+
+    /** Should: return the visible symbol of every wheel, left to right. */
+    @Test
+    public void configurationShouldReturnVisibleSymbolPerWheel() {
+        machine.spin(new String[]{"red", "blue", "green"});
+        assertArrayEquals(new String[]{"red", "blue", "green"}, machine.configuration());
+    }
+
+    /** Should: report a jackpot when all wheels show the same symbol. */
+    @Test
+    public void isJackpotShouldBeTrueWhenAllWheelsMatch() {
+        machine.spin(new String[]{"red", "red", "red"});
+        assertTrue(machine.isJackpot());
+    }
+
+    /** Should not: report a jackpot when wheels show different symbols. */
+    @Test
+    public void isJackpotShouldBeFalseWhenWheelsDiffer() {
+        machine.spin(new String[]{"red", "blue", "green"});
+        assertFalse(machine.isJackpot());
+    }
+
+    /** Should not: report a jackpot when the machine has no symbols yet. */
+    @Test
+    public void isJackpotShouldBeFalseWithNoSymbols() {
+        SlotMachine empty = new SlotMachine(false);
+        assertFalse(empty.isJackpot());
+        assertFalse(empty.ok());
+    }
+
+    // ---------- Requirement 7: visibility ----------
+
+    /** Should: succeed when toggling the machine's visibility. */
+    @Test
+    public void makeVisibleAndMakeInvisibleShouldSucceed() {
+        machine.makeVisible();
+        assertTrue(machine.ok());
+        machine.makeInvisible();
+        assertTrue(machine.ok());
+    }
+
+    // Note: exit() is intentionally not tested here, since it calls
+    // System.exit(0) directly and would terminate the whole JVM running
+    // the test suite, aborting every other test. It is instead covered
+    // by a manual acceptance test.
 }
