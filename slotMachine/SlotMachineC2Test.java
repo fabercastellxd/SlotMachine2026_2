@@ -75,34 +75,34 @@ public class SlotMachineC2Test {
     @Test
     public void addSymbolShouldRegisterNewColor() {
         machine.addSymbol(1, "yellow");
-        assertEquals(4, machine.distinctSymbols());
+        assertEquals(4, machine.symbols().length);
         assertTrue(machine.ok());
     }
 
     /** Should not: register a color that already exists. */
     @Test
     public void addSymbolShouldFailWhenColorAlreadyExists() {
-        int before = machine.distinctSymbols();
+        int before = machine.symbols().length;
         machine.addSymbol(1, "red");
         assertFalse(machine.ok());
-        assertEquals(before, machine.distinctSymbols());
+        assertEquals(before, machine.symbols().length);
     }
 
     /** Should: remove an existing color from the catalog. */
     @Test
     public void delSymbolShouldRemoveExistingColor() {
         machine.delSymbol("red");
-        assertEquals(2, machine.distinctSymbols());
+        assertEquals(2, machine.symbols().length);
         assertTrue(machine.ok());
     }
 
     /** Should not: remove a color that was never registered. */
     @Test
     public void delSymbolShouldFailWhenColorDoesNotExist() {
-        int before = machine.distinctSymbols();
+        int before = machine.symbols().length;
         machine.delSymbol("purple");
         assertFalse(machine.ok());        
-        assertEquals(before, machine.distinctSymbols());
+        assertEquals(before, machine.symbols().length);
     }
 
     /** Should: manually set the visible symbol of a specific wheel. */
@@ -242,8 +242,8 @@ public class SlotMachineC2Test {
 
     /** Should: return the total count of registered symbols. */
     @Test
-    public void distinctSymbolsShouldReturnCatalogSize() {
-        assertEquals(3, machine.distinctSymbols());
+    public void symbolsLengthShouldMatchCatalogSize() {
+    assertEquals(3, machine.symbols().length);
     }
 
     /** Should: return the visible symbol of every wheel, left to right. */
@@ -285,7 +285,27 @@ public class SlotMachineC2Test {
         machine.makeInvisible();
         assertTrue(machine.ok());
     }
-
+    
+    // ----------- Marathon tests ----------------
+    /** Should: count only the symbols visible right now, not the catalog. */
+    @Test
+    public void distinctSymbolsShouldCountOnlyVisibleSymbols() {
+        assertEquals(1, machine.distinctSymbols()); 
+    }
+    
+    /** Should: count one per different visible symbol. */
+    @Test
+    public void distinctSymbolsShouldCountEachDifferentVisibleSymbol() {
+        machine.spin(new String[]{"red", "blue", "green"});
+        assertEquals(3, machine.distinctSymbols());
+    }
+    
+    /** Should not: count anything when no symbols exist. */
+    @Test
+    public void distinctSymbolsShouldBeZeroWithNoSymbols() {
+        SlotMachine empty = new SlotMachine(false);
+        assertEquals(0, empty.distinctSymbols());
+    }    
     // Note: exit() is intentionally not tested here, since it calls
     // System.exit(0) directly and would terminate the whole JVM running
     // the test suite, aborting every other test. It is instead covered

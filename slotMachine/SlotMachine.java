@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
 import java.util.Random;
-
+import java.util.HashSet;
 /**
  * Represents a slot machine simulator.
  * The machine manages a dynamic set of wheels (between {@link #MIN_WHEELS} and {@link #MAX_WHEELS}),
@@ -110,16 +110,18 @@ public class SlotMachine {
         placeOnAxis(middleRectangle, middleWidth, INITIAL_Y + TOP_HEIGHT);
         placeOnAxis(baseRectangle, baseWidth, INITIAL_Y + TOP_HEIGHT + MIDDLE_HEIGHT);
 
-        topRectangle.makeVisible();
-        middleRectangle.makeVisible();
-        baseRectangle.makeVisible();
+        if (startVisible) {
+            topRectangle.makeVisible();
+            middleRectangle.makeVisible();
+            baseRectangle.makeVisible();
+        }
 
         int yWheel = INITIAL_Y + TOP_HEIGHT + 15;
         for (int i = 1; i <= MIN_WHEELS; i++) {
-            wheelList.add(new Wheel(wheelX(i), yWheel));
+            wheelList.add(new Wheel(wheelX(i), yWheel, startVisible));     
         }
     }
-
+    
     /**
      * Recalculates the dimensions for the middle, top, and base sections of the machine
      * based on the specified number of wheels.
@@ -183,6 +185,7 @@ public class SlotMachine {
     /**
      * Adds {@code pos} new wheels to the slot machine, all at once.
      * The whole operation fails (nothing is added) if the resulting total would exceed {@link #MAX_WHEELS}.
+     * When it fails and the machine is visible, the user is warned with a dialog.
      *
      * @param pos The number of wheels to add.
      */
@@ -192,10 +195,8 @@ public class SlotMachine {
             return;
         }
         if (wheelList.size() + pos > MAX_WHEELS) {
-            JOptionPane.showMessageDialog(null,
-                "No puedes agregar " + pos + " ruedas (hay " + wheelList.size() +
-                ", el maximo es " + MAX_WHEELS + ")",
-                "Limite Maximo", JOptionPane.WARNING_MESSAGE);
+            showMessage("No puedes agregar " + pos + " ruedas (hay " + wheelList.size() +
+                ", el maximo es " + MAX_WHEELS + ")", "Limite Maximo");
             ok = false;
             return;
         }
@@ -219,7 +220,7 @@ public class SlotMachine {
         int yWheel = INITIAL_Y + TOP_HEIGHT + 15;
         int xNew = wheelX(wheelList.size() + 1);
 
-        Wheel newWheel = new Wheel(xNew, yWheel);
+        Wheel newWheel = new Wheel(xNew, yWheel, visible);  
         for (int i = 0; i < symbols.size(); i++) {
             newWheel.addSymbol(i, symbols.get(i));
         }
@@ -229,6 +230,7 @@ public class SlotMachine {
     /**
      * Removes {@code pos} wheels from the slot machine, all at once.
      * The whole operation fails (nothing is removed) if the resulting total would go below {@link #MIN_WHEELS}.
+     * When it fails and the machine is visible, the user is warned with a dialog.
      *
      * @param pos The number of wheels to remove.
      */
@@ -238,10 +240,8 @@ public class SlotMachine {
             return;
         }
         if (wheelList.size() - pos < MIN_WHEELS) {
-            JOptionPane.showMessageDialog(null,
-                "No puedes eliminar " + pos + " ruedas (hay " + wheelList.size() +
-                ", el minimo es " + MIN_WHEELS + ")",
-                "Limite Minimo", JOptionPane.WARNING_MESSAGE);
+            showMessage("No puedes eliminar " + pos + " ruedas (hay " + wheelList.size() +
+                ", el minimo es " + MIN_WHEELS + ")", "Limite Minimo");
             ok = false;
             return;
         }
@@ -329,6 +329,7 @@ public class SlotMachine {
     /**
      * Manually sets the visible symbol on a specific wheel.
      * Checks if the symbol is valid and triggers jackpot verification.
+     * If the symbol does not exist and the machine is visible, the user is warned with a dialog.
      *
      * @param wheel 1-based index of the target wheel.
      * @param symbol The color symbol to display.
@@ -336,7 +337,7 @@ public class SlotMachine {
     public void placeSymbol(int wheel, String symbol) {
         if (!symbols.contains(symbol)) {
             ok = false;
-            JOptionPane.showMessageDialog(null, "El simbolo " + symbol + " no existe", "Error", JOptionPane.WARNING_MESSAGE);
+            showMessage("El simbolo " + symbol + " no existe", "Error");
             return;
         }
         int index = clamPos(wheel, wheelList.size()) - 1;
@@ -399,13 +400,20 @@ public class SlotMachine {
     }
 
     /**
-     * Returns the total count of distinct symbols registered in the machine.
+     * Returns how many different symbols are currently visible across all wheels,
+     * as the friend in the contest would see them. This is not the catalog size:
+     * for that use {@code symbols().length}.
      *
-     * @return The number of distinct symbols.
+     * @return number of distinct visible symbols (0 if none is shown).
      */
     public int distinctSymbols() {
-        ok = true;
-        return symbols.size();
+    HashSet<String> visibleNow = new HashSet<>();
+    for (Wheel w : wheelList) {
+        String s = w.getVisibleSymbol();
+        if (s != null) visibleNow.add(s);
+    }
+    ok = true;
+    return visibleNow.size();
     }
 
     /**
@@ -463,7 +471,8 @@ public class SlotMachine {
     }
 
     /**
-     * Makes all graphical components of the slot machine visible on the canvas.
+     * Makes all graphical components of the slot machine visible and shows
+     * the canvas window if it was hidden.
      */
     public void makeVisible() {
         visible = true;
@@ -473,14 +482,17 @@ public class SlotMachine {
         for (Wheel w : wheelList) {
             w.makeVisible();
         }
+        Canvas.getCanvas().setVisible(true);
         ok = true;
     }
-
+    
     /**
-     * Hides all graphical components of the slot machine from the canvas.
+     * Hides all graphical components of the slot machine and the canvas window.
+     * From now on, operations draw nothing and never wait.
      */
     public void makeInvisible() {
         visible = false;
+        Canvas.getCanvas().setVisible(false);
         topRectangle.makeInvisible();
         middleRectangle.makeInvisible();
         baseRectangle.makeInvisible();
@@ -568,11 +580,12 @@ public class SlotMachine {
 
     /**
      * Rotates a specific wheel by an exact number of steps (not random).
-     * If the machine is visible, the rotation is shown step by step.
-     * Fails if the wheel is locked.
+     * Steps may be negative (rotate backwards) or very large: they are reduced
+     * modulo the number of symbols. If the machine is visible, the rotation is
+     * shown step by step. Fails if the wheel is locked.
      *
      * @param wheel 1-based index of the wheel to spin.
-     * @param steps number of forward steps to rotate.
+     * @param steps number of positions to rotate.
      */
     public void spin(int wheel, int steps) {
         if (wheelList.isEmpty() || symbols.isEmpty()) {
@@ -616,5 +629,65 @@ public class SlotMachine {
         }
         checkJackPot();
         ok = true;
+    }
+    // CIclo 3
+    /** Colors used as symbols by {@link #SlotMachine(int)}: 50 different CSS color names. */
+    private static final String[] PALETTE = {
+        "red", "blue", "green", "yellow", "orange", "purple", "pink", "brown", "cyan", "lime",
+        "navy", "teal", "maroon", "olive", "coral", "salmon", "crimson", "indigo", "violet", "turquoise",
+        "tan", "khaki", "orchid", "plum", "tomato", "chocolate", "sienna", "peru", "skyblue", "steelblue",
+        "royalblue", "dodgerblue", "slateblue", "seagreen", "forestgreen", "limegreen", "springgreen",
+        "chartreuse", "darkorange", "hotpink", "deeppink", "firebrick", "darkred", "darkgreen",
+        "darkblue", "aquamarine", "lavender", "beige", "mediumpurple", "goldenrod"
+    };
+    /**
+     * Constructs an invisible machine with n wheels and n different symbols, as in the
+     * contest. Every wheel has the same symbols in the same order, and the initial
+     * configuration is random and never a jackpot (so there are always at least two
+     * different visible symbols).
+     * If n is outside [{@link #MIN_WHEELS}, {@link #MAX_WHEELS}] it is adjusted to the
+     * nearest valid value and {@link #ok()} returns {@code false}.
+     *
+     * @param n number of wheels and of symbols.
+     */
+    public SlotMachine(int n) {
+        this(false);
+        int size = Math.max(MIN_WHEELS, Math.min(n, MAX_WHEELS));
+        if (size > MIN_WHEELS) {
+            addWheel(size - MIN_WHEELS);
+        }
+        for (int i = 1; i <= size; i++) {
+            addSymbol(i, PALETTE[i - 1]);
+        }
+        randomizeConfiguration();
+        ok = (size == n);
+    }
+    
+    /**
+     * Leaves every wheel showing a random symbol, repeating until the result
+     * is not a jackpot.
+     */
+    private void randomizeConfiguration() {
+        Random r = new Random();
+        String[] target = new String[wheelList.size()];
+        do {
+            for (int i = 0; i < target.length; i++) {
+                target[i] = symbols.get(r.nextInt(symbols.size()));
+            }
+            spin(target);
+        } while (isJackpot());
+    }
+    
+    /**
+     * Shows a warning dialog to the user, but only if the machine is visible.
+     * An invisible machine (unit tests, the contest solver) never opens dialogs.
+     *
+     * @param message text of the warning.
+     * @param title   title of the dialog window.
+     */
+    private void showMessage(String message, String title) {
+        if (visible) {
+            JOptionPane.showMessageDialog(null, message, title, JOptionPane.WARNING_MESSAGE);
+        }
     }
 }

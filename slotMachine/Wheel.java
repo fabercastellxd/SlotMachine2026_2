@@ -9,7 +9,7 @@ import java.util.ArrayList;
  *
  * @author Mateo Sanchez
  * @author Maria Angelica Perez
- * @version 09/09/26
+ * @version 3.0
  */
 public class Wheel {
     private static final int HEIGHT = 120;
@@ -32,17 +32,30 @@ public class Wheel {
     private int currentBlockY;
     private int nextBlockY;
 
-    /**
-     * Constructs a new Wheel at the specified coordinates on the canvas.
+        /**
+     * Constructs a new visible Wheel at the specified coordinates on the canvas.
      *
      * @param x The initial X-coordinate on the canvas.
      * @param y The initial Y-coordinate on the canvas.
      */
     public Wheel(int x, int y) {
+        this(x, y, true);
+    }
+
+    /**
+     * Constructs a new Wheel at the specified coordinates on the canvas.
+     * An invisible wheel draws nothing and never waits, so it costs almost
+     * nothing to create and to update.
+     *
+     * @param x       The initial X-coordinate on the canvas.
+     * @param y       The initial Y-coordinate on the canvas.
+     * @param visible Whether the wheel is drawn on the canvas from the start.
+     */
+    public Wheel(int x, int y, boolean visible) {
         symbols = new ArrayList<>();
         windowX = x;
         windowY = y;
-
+    
         currentBlock = new Rectangle();
         currentBlock.changeSize(HEIGHT, WIDTH);
         currentBlock.changeColor("gray");
@@ -50,8 +63,10 @@ public class Wheel {
         currentBlock.moveVertical(y - DEFAULT_Y);
         currentBlockY = y;
         currentBlock.setClip(windowX, windowY, WIDTH, HEIGHT);
-        currentBlock.makeVisible();
-
+        if (visible) {
+            currentBlock.makeVisible();
+        }
+    
         nextBlock = new Rectangle();
         nextBlock.changeSize(HEIGHT, WIDTH);
         nextBlock.changeColor("gray");
@@ -61,7 +76,7 @@ public class Wheel {
         nextBlock.setClip(windowX, windowY, WIDTH, HEIGHT);
         // nextBlock queda invisible hasta que un giro animado lo necesite
     }
-
+    
     /**
      * Moves the wheel horizontally by a given distance, keeping the
      * visible window (clip) aligned with both blocks.
@@ -180,55 +195,67 @@ public class Wheel {
     }
 
     /**
-     * Rotates the wheel forward {@code steps} positions. When {@code animate}
-     * is true, each step is shown as a vertical scroll (the outgoing symbol
-     * slides up and out while the incoming one slides up into view).
+     * Rotates the wheel {@code steps} positions. Negative steps rotate backwards.
+     * The steps are first reduced modulo the number of symbols, so even a huge
+     * number of steps costs at most one full turn. When {@code animate} is true,
+     * the wheel takes the shortest way (forward or backward) and shows it as a
+     * vertical scroll, one symbol at a time.
      *
-     * @param steps   number of forward steps to rotate.
+     * @param steps   number of positions to rotate (may be negative or very large).
      * @param animate whether to show the scroll animation for each step.
      */
     public void rotate(int steps, boolean animate) {
         if (symbols.isEmpty()) return;
-        for (int i = 0; i < steps; i++) {
-            if (animate) {
-                animateOneStepForward();
+        int size = symbols.size();
+        int forward = Math.floorMod(steps, size);
+        if (animate) {
+            int backward = size - forward;
+            if (forward <= backward) {
+                for (int i = 0; i < forward; i++) {
+                    animateOneStep(1);
+                }
             } else {
-                currentIndex = (currentIndex + 1) % symbols.size();
+                for (int i = 0; i < backward; i++) {
+                    animateOneStep(-1);
+                }
             }
-        }
-        if (!animate) {
+        } else {
+            currentIndex = (currentIndex + forward) % size;
             showCurrentSymbol();
         }
     }
-
     /**
-     * Performs one full scroll cycle: brings in the next symbol from below
-     * while the current one exits above, then swaps the block roles so the
-     * wheel is ready for the next step.
+     * Performs one full scroll cycle in the given direction, then swaps the block
+     * roles so the wheel is ready for the next step. Forward (+1): the next symbol
+     * comes in from below while the current one exits above. Backward (-1): the
+     * previous symbol comes in from above while the current one exits below.
+     *
+     * @param direction +1 to scroll to the next symbol, -1 to scroll to the previous one.
      */
-    private void animateOneStepForward() {
+    private void animateOneStep(int direction) {
         int previousIndex = currentIndex;
-        int newIndex = (currentIndex + 1) % symbols.size();
-
+        int newIndex = Math.floorMod(currentIndex + direction, symbols.size());
+    
         moveBlockTo(currentBlock, currentBlockY, windowY);
         currentBlockY = windowY;
         currentBlock.changeColor(previousIndex == -1 ? "gray" : symbols.get(previousIndex));
-
-        moveBlockTo(nextBlock, nextBlockY, windowY + HEIGHT);
-        nextBlockY = windowY + HEIGHT;
+    
+        int entryY = windowY + direction * HEIGHT;
+        moveBlockTo(nextBlock, nextBlockY, entryY);
+        nextBlockY = entryY;
         nextBlock.changeColor(symbols.get(newIndex));
         nextBlock.makeVisible();
-
+    
         int remaining = HEIGHT;
         while (remaining > 0) {
-            int delta = Math.min(SCROLL_STEP_PX, remaining);
+            int delta = direction * Math.min(SCROLL_STEP_PX, remaining);
             currentBlock.moveVertical(-delta);
             currentBlockY -= delta;
             nextBlock.moveVertical(-delta);
             nextBlockY -= delta;
-            remaining -= delta;
+            remaining -= Math.abs(delta);
         }
-
+    
         currentBlock.makeInvisible();
         Rectangle exited = currentBlock;
         int exitedY = currentBlockY;
@@ -237,7 +264,7 @@ public class Wheel {
         nextBlock = exited;
         nextBlockY = exitedY;
         nextBlock.makeInvisible();
-
+    
         currentIndex = newIndex;
     }
 
