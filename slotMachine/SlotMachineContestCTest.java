@@ -23,7 +23,7 @@ public class SlotMachineContestCTest {
         for (int[] action : actions) {
             assertEquals(2, action.length);
             assertTrue(action[0] >= 1 && action[0] <= n);
-            assertTrue(Math.abs(action[1]) <= 1_000_000_000);
+            assertTrue(Math.abs(action[1]) <= 1000000000);
         }
     }
 

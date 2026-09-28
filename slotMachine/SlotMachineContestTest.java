@@ -3,7 +3,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.awt.Color;
-import java.time.Duration;
+import java.awt.HeadlessException;
 /**
  * Unit test cases for cycle 3: the SlotMachine(n) constructor and the contest solver.
  * Every machine created with SlotMachine(n) is invisible.
@@ -83,7 +83,7 @@ public class SlotMachineContestTest {
     /** Should: rotate backwards when steps are negative. */
     @Test
     public void spinWithNegativeStepsShouldRotateBackwards() {
-        SlotMachine machine = new SlotMachine(3);   // symbols: red, blue, green
+        SlotMachine machine = new SlotMachine(3);   
         machine.placeSymbol(1, "red");
         machine.spin(1, -1);
         assertEquals("green", machine.configuration()[0]);
@@ -95,9 +95,13 @@ public class SlotMachineContestTest {
     public void spinWithHugeStepsShouldBeFastAndCorrect() {
         SlotMachine machine = new SlotMachine(3);
         machine.placeSymbol(1, "red");
-        assertTimeout(Duration.ofSeconds(1), () -> machine.spin(1, 1_000_000_000));
-        assertEquals("blue", machine.configuration()[0]);   // 10^9 mod 3 = 1
+        long start = System.currentTimeMillis();
+        machine.spin(1, 1000000000);
+        long elapsed = System.currentTimeMillis() - start;
+        assertTrue(elapsed < 1000, "took " + elapsed + " ms");
+        assertEquals("blue", machine.configuration()[0]);
     }
+
     
     /** Should not: change the wheel when steps is a multiple of the symbol count. */
     @Test
@@ -113,16 +117,23 @@ public class SlotMachineContestTest {
     @Test
     public void addWheelShouldNotOpenDialogWhenInvisible() {
         SlotMachine machine = new SlotMachine(3);
-        assertTimeoutPreemptively(Duration.ofSeconds(2),
-            () -> machine.addWheel(SlotMachine.MAX_WHEELS));
+        try {
+            machine.addWheel(SlotMachine.MAX_WHEELS);
+        } catch (HeadlessException e) {
+            fail("Una maquina invisible no debe abrir un dialogo");
+        }
         assertFalse(machine.ok());
     }
-    
+   
     /** Should not: open a dialog when delWheel fails on an invisible machine. */
     @Test
     public void delWheelShouldNotOpenDialogWhenInvisible() {
         SlotMachine machine = new SlotMachine(3);
-        assertTimeoutPreemptively(Duration.ofSeconds(2), () -> machine.delWheel(1));
+        try {
+            machine.delWheel(1);
+        } catch (HeadlessException e) {
+            fail("Una maquina invisible no debe abrir un dialogo");
+        }
         assertFalse(machine.ok());
     }
     
@@ -130,8 +141,11 @@ public class SlotMachineContestTest {
     @Test
     public void placeSymbolShouldNotOpenDialogWhenInvisible() {
         SlotMachine machine = new SlotMachine(3);
-        assertTimeoutPreemptively(Duration.ofSeconds(2),
-            () -> machine.placeSymbol(1, "notacolor"));
+        try {
+            machine.placeSymbol(1, "notacolor");
+        } catch (HeadlessException e) {
+            fail("Una maquina invisible no debe abrir un dialogo");
+        }
         assertFalse(machine.ok());
     }
     
@@ -161,7 +175,10 @@ public class SlotMachineContestTest {
     @Test
     public void solveShouldSolveContestMaximumQuickly() {
         SlotMachineContest contest = new SlotMachineContest();
-        assertTimeout(Duration.ofSeconds(10), () -> contest.solve(50));
+        long start = System.currentTimeMillis();
+        contest.solve(50);
+        long elapsed = System.currentTimeMillis() - start;
+        assertTrue(elapsed < 10000, "tomo " + elapsed + " ms");
         assertTrue(contest.getMachine().isJackpot());
     }
     
@@ -217,7 +234,7 @@ public class SlotMachineContestTest {
         SlotMachine machine = contest.getMachine();
         assertTrue(Canvas.getCanvas().isVisible());
         assertTrue(machine.isJackpot());
-        machine.makeInvisible();   // hide the window again for the rest of the tests
+        machine.makeInvisible();  
     }
     
     /** Should not: simulate a size outside the contest range; no machine is created. */
@@ -230,16 +247,16 @@ public class SlotMachineContestTest {
     
     @Test
     public void visibleSpinShouldEndOnCorrectSymbolInBothDirections() {
-        SlotMachine machine = new SlotMachine(5);   // red, blue, green, yellow, orange
+        SlotMachine machine = new SlotMachine(5);   
         machine.placeSymbol(1, "red");
         machine.makeVisible();
-        machine.spin(1, 1);    // forward 1
+        machine.spin(1, 1);    
         assertEquals("blue", machine.configuration()[0]);
-        machine.spin(1, -1);   // backward 1
+        machine.spin(1, -1);   
         assertEquals("red", machine.configuration()[0]);
-        machine.spin(1, 4);    // 4 forward = 1 backward
+        machine.spin(1, 4);    
         assertEquals("orange", machine.configuration()[0]);
-        machine.spin(1, 3);    // 3 forward = 2 backward
+        machine.spin(1, 3);    
         assertEquals("green", machine.configuration()[0]);
         machine.makeInvisible();
     }
@@ -249,6 +266,13 @@ public class SlotMachineContestTest {
     public void visibleBackwardSpinShouldTakeTheShortWay() {
         SlotMachine machine = new SlotMachine(50);
         machine.makeVisible();
-        assertTimeout(Duration.ofSeconds(5), () -> machine.spin(1, -1)); 
+        try {
+            long start = System.currentTimeMillis();
+            machine.spin(1, -1);
+            long elapsed = System.currentTimeMillis() - start;
+            assertTrue(elapsed < 5000, "took " + elapsed + " ms");
+        } finally {
+            machine.makeInvisible();
+        }
     }
 }

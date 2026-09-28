@@ -212,7 +212,7 @@ public class SlotMachineContest {
      */
     private void rewind(int[][] solution) {
         for (int i = solution.length - 1; i >= 0; i--) {
-            machine.spin(solution[i][0], -solution[i][1]);
+            machine.spin(solution[i][0], - solution[i][1]);
         }
     }
     
