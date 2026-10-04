@@ -1,18 +1,16 @@
-
-
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Shared unit tests for cycle 3 (collective class). 
+ * Shared unit tests for cycle 3 (collective class) 
  */
 public class SlotMachineContestCTest {
 
     /**
-     * Should not: use more than 10 000 actions. Every action must also be valid:
-     * a wheel between 1 and n, and steps within the contest range (+-10^9).
+     * Should not: use more than 10 000 actions Every action must also be valid:
+     * a wheel between 1 and n, and steps within the contest range (+-10^9)
      */
     @Test
     public void accordingPmSgShouldNotUseMoreThanTenThousandActions() {
@@ -28,8 +26,8 @@ public class SlotMachineContestCTest {
     }
 
     /**
-     * Should not: start in a jackpot. The contest guarantees that a machine of
-     * n wheels starts with more than one distinct symbol.
+     * Should not: start in a jackpot The contest guarantees that a machine of
+     * n wheels starts with more than one distinct symbol
      */
     @Test
     public void accordingPmSgShouldNotCreateMachineAlreadyInJackpot() {

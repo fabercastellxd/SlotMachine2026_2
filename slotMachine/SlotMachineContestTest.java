@@ -5,15 +5,15 @@ import java.util.HashSet;
 import java.awt.Color;
 import java.awt.HeadlessException;
 /**
- * Unit test cases for cycle 3: the SlotMachine(n) constructor and the contest solver.
- * Every machine created with SlotMachine(n) is invisible.
+ * Unit test cases for cycle 3: the SlotMachine(n) constructor and the contest solver
+ * Every machine created with SlotMachine(n) is invisible
  *
  * @author Mateo Sanchez
  * @author Maria Angelica Perez
  */
 public class SlotMachineContestTest {
 
-    /** Should: create exactly n wheels. */
+    /** Should: create exactly n wheels */
     @Test
     public void constructorWithNShouldCreateNWheels() {
         SlotMachine machine = new SlotMachine(5);
@@ -21,7 +21,7 @@ public class SlotMachineContestTest {
         assertTrue(machine.ok());
     }
 
-    /** Should: register n symbols, all different. */
+    /** Should: register n symbols, all different */
     @Test
     public void constructorWithNShouldCreateNDistinctSymbols() {
         SlotMachine machine = new SlotMachine(5);
@@ -30,7 +30,7 @@ public class SlotMachineContestTest {
         assertEquals(5, new HashSet<>(Arrays.asList(catalog)).size());
     }
 
-    /** Should not: start in a jackpot; the contest guarantees k > 1. */
+    /** Should not: start in a jackpot; the contest guarantees k > 1 */
     @Test
     public void constructorWithNShouldNeverStartInJackpot() {
         for (int i = 0; i < 10; i++) {
@@ -40,7 +40,7 @@ public class SlotMachineContestTest {
         }
     }
 
-    /** Should not: build fewer than MIN_WHEELS wheels; it adjusts and reports it. */
+    /** Should not: build fewer than MIN_WHEELS wheels; it adjusts and reports it */
     @Test
     public void constructorWithNShouldAdjustWhenBelowMinimum() {
         SlotMachine machine = new SlotMachine(2);
@@ -48,7 +48,7 @@ public class SlotMachineContestTest {
         assertFalse(machine.ok());
     }
 
-    /** Should: support the contest maximum, n = 50. */
+    /** Should: support the contest maximum, n = 50 */
     @Test
     public void constructorWithNShouldSupportContestMaximum() {
         SlotMachine machine = new SlotMachine(50);
@@ -57,7 +57,7 @@ public class SlotMachineContestTest {
         assertTrue(machine.ok());
     }
     
-    /** Should: show the window when made visible and hide it again when made invisible. */
+    /** Should: show the window when made visible and hide it again when made invisible */
     @Test
     public void makeVisibleAndMakeInvisibleShouldShowAndHideTheWindow() {
         SlotMachine machine = new SlotMachine(3);
@@ -68,7 +68,7 @@ public class SlotMachineContestTest {
         assertFalse(Canvas.getCanvas().isVisible());
     }
     
-    /** Should: give every symbol of the largest machine a known and different color. */
+    /** Should: give every symbol of the largest machine a known and different color */
     @Test
     public void allSymbolsOfLargestMachineShouldHaveKnownDifferentColors() {
         SlotMachine machine = new SlotMachine(50);
@@ -80,7 +80,7 @@ public class SlotMachineContestTest {
         }
         assertEquals(50, colors.size());
     }
-    /** Should: rotate backwards when steps are negative. */
+    /** Should: rotate backwards when steps are negative */
     @Test
     public void spinWithNegativeStepsShouldRotateBackwards() {
         SlotMachine machine = new SlotMachine(3);   
@@ -90,7 +90,7 @@ public class SlotMachineContestTest {
         assertTrue(machine.ok());
     }
     
-    /** Should: handle the contest's largest step (10^9) quickly and correctly. */
+    /** Should: handle the contest's largest step (10^9) quickly and correctly */
     @Test
     public void spinWithHugeStepsShouldBeFastAndCorrect() {
         SlotMachine machine = new SlotMachine(3);
@@ -103,7 +103,7 @@ public class SlotMachineContestTest {
     }
 
     
-    /** Should not: change the wheel when steps is a multiple of the symbol count. */
+    /** Should not: change the wheel when steps is a multiple of the symbol count */
     @Test
     public void spinWithMultipleOfSymbolCountShouldLeaveWheelUnchanged() {
         SlotMachine machine = new SlotMachine(3);
@@ -113,7 +113,7 @@ public class SlotMachineContestTest {
         assertTrue(machine.ok());
     }
     
-    /** Should not: open a dialog when addWheel fails on an invisible machine. */
+    /** Should not: open a dialog when addWheel fails on an invisible machine */
     @Test
     public void addWheelShouldNotOpenDialogWhenInvisible() {
         SlotMachine machine = new SlotMachine(3);
@@ -125,7 +125,7 @@ public class SlotMachineContestTest {
         assertFalse(machine.ok());
     }
    
-    /** Should not: open a dialog when delWheel fails on an invisible machine. */
+    /** Should not: open a dialog when delWheel fails on an invisible machine */
     @Test
     public void delWheelShouldNotOpenDialogWhenInvisible() {
         SlotMachine machine = new SlotMachine(3);
@@ -137,7 +137,7 @@ public class SlotMachineContestTest {
         assertFalse(machine.ok());
     }
     
-    /** Should not: open a dialog when placeSymbol fails on an invisible machine. */
+    /** Should not: open a dialog when placeSymbol fails on an invisible machine */
     @Test
     public void placeSymbolShouldNotOpenDialogWhenInvisible() {
         SlotMachine machine = new SlotMachine(3);
@@ -149,7 +149,7 @@ public class SlotMachineContestTest {
         assertFalse(machine.ok());
     }
     
-    /** Should: leave the machine in a jackpot for every size from 3 to 12. */
+    /** Should: leave the machine in a jackpot for every size from 3 to 12 */
     @Test
     public void solveShouldEndInJackpotForSmallAndMediumSizes() {
         SlotMachineContest contest = new SlotMachineContest();
@@ -159,7 +159,7 @@ public class SlotMachineContestTest {
         }
     }
     
-    /** Should: win from many different random starts, including the tricky n = 3. */
+    /** Should: win from many different random starts, including the tricky n = 3 */
     @Test
     public void solveShouldWinFromManyRandomStarts() {
         SlotMachineContest contest = new SlotMachineContest();
@@ -171,7 +171,7 @@ public class SlotMachineContestTest {
         }
     }
     
-    /** Should: solve the contest's largest machine, n = 50, in reasonable time. */
+    /** Should: solve the contest's largest machine, n = 50, in reasonable time */
     @Test
     public void solveShouldSolveContestMaximumQuickly() {
         SlotMachineContest contest = new SlotMachineContest();
@@ -182,7 +182,7 @@ public class SlotMachineContestTest {
         assertTrue(contest.getMachine().isJackpot());
     }
     
-    /** Should not: use more than 10 000 actions, nor more than the designed bound (n-1)(2n+1). */
+    /** Should not: use more than 10 000 actions, nor more than the designed bound (n-1)(2n+1) */
     @Test
     public void solveShouldRespectActionLimits() {
         SlotMachineContest contest = new SlotMachineContest();
@@ -193,7 +193,7 @@ public class SlotMachineContestTest {
         }
     }
     
-    /** Should: return well-formed actions: wheel between 1 and n, and steps different from zero. */
+    /** Should: return well-formed actions: wheel between 1 and n, and steps different from zero */
     @Test
     public void solveShouldReturnWellFormedActions() {
         SlotMachineContest contest = new SlotMachineContest();
@@ -205,7 +205,7 @@ public class SlotMachineContestTest {
         }
     }
     
-    /** Should not: solve sizes outside the contest range; it returns no actions. */
+    /** Should not: solve sizes outside the contest range; it returns no actions */
     @Test
     public void solveShouldReturnNoActionsWhenSizeIsOutOfRange() {
         SlotMachineContest contest = new SlotMachineContest();
@@ -214,7 +214,7 @@ public class SlotMachineContestTest {
         assertEquals(0, contest.solve(-1).length);
     }
     
-    /** Should: keep the machine invisible while solving. */
+    /** Should: keep the machine invisible while solving */
     @Test
     public void solveShouldKeepMachineInvisible() {
         SlotMachineContest contest = new SlotMachineContest();
@@ -223,9 +223,9 @@ public class SlotMachineContestTest {
     }
     
     /**
-     * Should: end visible and in a jackpot after simulating. Replaying the actions
+     * Should: end visible and in a jackpot after simulating Replaying the actions
      * only leads to a jackpot if the rewind restored the exact initial configuration,
-     * so this also checks the round trip.
+     * so this also checks the round trip
      */
     @Test
     public void simulateShouldEndVisibleInJackpot() {
@@ -237,7 +237,7 @@ public class SlotMachineContestTest {
         machine.makeInvisible();  
     }
     
-    /** Should not: simulate a size outside the contest range; no machine is created. */
+    /** Should not: simulate a size outside the contest range; no machine is created */
     @Test
     public void simulateShouldDoNothingWhenSizeIsOutOfRange() {
         SlotMachineContest contest = new SlotMachineContest();
@@ -261,7 +261,7 @@ public class SlotMachineContestTest {
         machine.makeInvisible();
     }
 
-    /** Should: take the short way: one step back on 50 symbols must not animate 49 steps forward. */
+    /** Should: take the short way: one step back on 50 symbols must not animate 49 steps forward */
     @Test
     public void visibleBackwardSpinShouldTakeTheShortWay() {
         SlotMachine machine = new SlotMachine(50);
