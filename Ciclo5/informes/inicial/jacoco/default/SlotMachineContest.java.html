@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SlotMachineContest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">SlotMachineContest.java</span></div><h1>SlotMachineContest.java</h1><pre class="source lang-java linenums">import java.util.ArrayList;
+import javax.swing.JOptionPane;
+
+/**
+ * Solver for Problem I (Slot Machine) of the 2025 ICPC World Finals
+ * It plays the role of the contestant: the only information it gets from the
+ * machine is the number of distinct visible symbols, and the only way it acts on
+ * it is by spinning a wheel It uses only {@code SlotMachine(n)},
+ * {@code spin(wheel, steps)} and {@code distinctSymbols()}
+ * The machine stays invisible while solving
+ *
+ * The strategy has three phases:
+ * 1) make all n visible symbols different, 2) find which wheel shows which symbol,
+ * 3) move every wheel to the symbol of wheel 1
+ *
+ * @author Mateo Sanchez
+ * @author Maria Angelica Perez
+ * @version 20/09/26
+ */
+public class SlotMachineContest {
+
+    private SlotMachine machine;
+    private int n;
+    private int distinct;
+    private ArrayList&lt;int[]&gt; actions;
+
+    /** order[t], for t = 1..n-1: the wheel whose symbol is t positions after wheel 1's */
+    private int[] order;
+
+    /**
+     * Creates a solver with no solution computed yet
+     */
+<span class="fc" id="L33">    public SlotMachineContest() {</span>
+<span class="fc" id="L34">        actions = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L35">    }</span>
+
+    /**
+     * Solves the contest for a new random invisible machine of n wheels and n symbols
+     * If n is outside [{@link SlotMachine#MIN_WHEELS}, {@link SlotMachine#MAX_WHEELS}],
+     * no machine is created and no actions are returned The solver never opens dialogs
+     *
+     * @param n number of wheels and of symbols
+     * @return the actions that lead to a jackpot: one row {wheel, steps} per action,
+     *         in the order they were made, or no actions if it could not win
+     */
+    public int[][] solve(int n) {
+<span class="fc" id="L47">        machine = null;</span>
+<span class="fc bfc" id="L48" title="All 4 branches covered.">        if (n &lt; SlotMachine.MIN_WHEELS || n &gt; SlotMachine.MAX_WHEELS) {</span>
+<span class="fc" id="L49">            return new int[0][];</span>
+        }
+<span class="fc" id="L51">        this.actions = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L52">        this.n = n;</span>
+<span class="fc" id="L53">        this.machine = new SlotMachine(n);</span>
+<span class="fc" id="L54">        this.order = new int[n];</span>
+<span class="fc" id="L55">        this.distinct = machine.distinctSymbols();</span>
+
+<span class="pc bpc" id="L57" title="1 of 6 branches missed.">        if (makeAllDistinct() || findOrder() || align()) {</span>
+<span class="fc" id="L58">            return actions.toArray(new int[0][]);</span>
+        }
+<span class="nc" id="L60">        return new int[0][];</span>
+    }
+
+    /**
+     * Returns the machine used by the last {@link #solve(int)}, in the state it was left
+     *
+     * @return the machine, or {@code null} if there is no solution computed
+     */
+    public SlotMachine getMachine() {
+<span class="fc" id="L69">        return machine;</span>
+    }
+
+    /**
+     * The only gate to the machine: spins a wheel, records the action and reads
+     * the number of distinct symbols An action with 0 steps is neither made nor recorded
+     *
+     * @param wheel 1-based wheel
+     * @param steps positions to rotate (may be negative)
+     * @return {@code true} if the machine reached a jackpot (a single distinct symbol)
+     */
+    private boolean move(int wheel, int steps) {
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (steps == 0) return false;</span>
+<span class="fc" id="L82">        machine.spin(wheel, steps);</span>
+<span class="fc" id="L83">        actions.add(new int[]{wheel, steps});</span>
+<span class="fc" id="L84">        distinct = machine.distinctSymbols();</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        return distinct == 1;</span>
+    }
+
+    /**
+     * Phase 1: makes the n visible symbols all different Wheel 1 stays still Each
+     * other wheel is turned through its whole cycle, one step at a time, and then
+     * left where the number of distinct symbols was the highest: there it shows a
+     * symbol that no other wheel shows
+     *
+     * @return {@code true} if the jackpot was reached along the way
+     */
+    private boolean makeAllDistinct() {
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        for (int wheel = 2; wheel &lt;= n; wheel++) {</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            if (distinct == n) return false;</span>
+<span class="fc" id="L99">            int bestDistinct = distinct;</span>
+<span class="fc" id="L100">            int bestStep = 0;</span>
+
+<span class="fc bfc" id="L102" title="All 2 branches covered.">            for (int step = 1; step &lt; n; step++) {</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                if (move(wheel, 1)) return true;</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">                if (distinct &gt; bestDistinct) {</span>
+<span class="fc" id="L105">                    bestDistinct = distinct;</span>
+<span class="fc" id="L106">                    bestStep = step;</span>
+                }
+            }
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">            if (move(wheel, bestStep - (n - 1))) return true;</span>
+        }
+<span class="fc" id="L111">        return false;</span>
+    }
+
+    /**
+     * Phase 2: starting with all symbols different, finds {@code order[t]} for every t
+     * Turning wheel 1 one step makes it repeat a symbol; the wheel that, moved one
+     * step back, makes all symbols different again is the one that showed it
+     * When it ends, wheel 1 shows its original symbol + (n-1) and wheel order[t]
+     * shows the original symbol of wheel 1 + (t-1)
+     *
+     * @return {@code true} if the jackpot was reached along the way
+     */
+    private boolean findOrder() {
+<span class="fc" id="L124">        boolean[] known = new boolean[n + 1];</span>
+<span class="fc" id="L125">        known[1] = true;</span>
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        for (int t = 1; t &lt; n; t++) {</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">            if (move(1, 1)) return true;</span>
+<span class="fc" id="L129">            int wheel = locate(known);</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (wheel == 0) return true;</span>
+
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">            if (wheel &lt; 0) {</span>
+<span class="nc" id="L133">                return false;</span>
+            }
+<span class="fc" id="L135">            known[wheel] = true;</span>
+<span class="fc" id="L136">            order[t] = wheel;</span>
+        }
+<span class="fc" id="L138">        return false;</span>
+    }
+
+    /**
+     * Tries each wheel not yet known: moves it one step back and, if all symbols
+     * become different, it is the one searched; otherwise puts it back
+     *
+     * @param known known[w] is true if wheel w already has its place in the order
+     * @return the wheel found, 0 if the jackpot was reached while testing,
+     *         or -1 if no wheel matched (it should never happen)
+     */
+    private int locate(boolean[] known) {
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        for (int wheel = 2; wheel &lt;= n; wheel++) {</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">            if (!known[wheel]) {</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">                if (move(wheel, -1)) return 0;</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">                if (distinct == n) return wheel;</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">                if (move(wheel, 1)) return 0;</span>
+            }
+        }
+<span class="nc" id="L157">        return -1;</span>
+    }
+
+    /**
+     * Phase 3: moves every wheel order[t] forward (n - t) steps, so that it shows
+     * the symbol of wheel 1 The last action leaves a single distinct symbol
+     *
+     * @return {@code true} if the jackpot was reached
+     */
+    private boolean align() {
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        for (int t = 1; t &lt; n; t++) {</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">            if (move(order[t], n - t)) return true;</span>
+        }
+<span class="nc" id="L170">        return false;</span>
+    }
+    
+    /**
+     * Solves the contest for a new random machine and then shows the solution:
+     * the machine is first rewound, still invisible, to its initial configuration
+     * (undoing the actions in reverse order), then made visible, and finally the
+     * actions are replayed one by one so each spin is seen step by step
+     * The machine is left visible, showing the jackpot If n is outside the contest
+     * range, nothing is done
+     * The animation lasts in proportion to the number of actions: it is comfortable
+     * for small machines (n up to about 10), and for n = 50 it works but takes many minutes
+     *
+     * @param n number of wheels and of symbols
+     */
+    public void simulate(int n) {
+<span class="fc" id="L186">        int[][] solution = solve(n);</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        if (machine == null) return;</span>
+<span class="fc" id="L188">        rewind(solution);</span>
+<span class="fc" id="L189">        machine.makeVisible();</span>
+<span class="fc" id="L190">        replay(solution);</span>
+<span class="fc" id="L191">    }</span>
+    
+    /**
+     * Undoes the given actions, last to first, leaving the machine as it was
+     * before the first one
+     *
+     * @param solution the actions to undo, as returned by {@link #solve(int)}
+     */
+    private void rewind(int[][] solution) {
+<span class="fc bfc" id="L200" title="All 2 branches covered.">        for (int i = solution.length - 1; i &gt;= 0; i--) {</span>
+<span class="fc" id="L201">            machine.spin(solution[i][0], - solution[i][1]);</span>
+        }
+<span class="fc" id="L203">    }</span>
+    
+    /**
+     * Makes the given actions again, first to last
+     *
+     * @param solution the actions to replay, as returned by {@link #solve(int)}
+     */
+    private void replay(int[][] solution) {
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        for (int[] action : solution) {</span>
+<span class="fc" id="L212">            machine.spin(action[0], action[1]);</span>
+        }
+<span class="fc" id="L214">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

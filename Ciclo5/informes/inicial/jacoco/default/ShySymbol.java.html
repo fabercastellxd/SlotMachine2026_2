@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShySymbol.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">ShySymbol.java</span></div><h1>ShySymbol.java</h1><pre class="source lang-java linenums">/**
+ * A shy symbol: every time it is selected in the wheel it switches between
+ * visible and invisible A white square marks it, so a hidden one can be told
+ *
+ * @author Mateo Sanchez
+ * @author Maria Angelica Perez
+ */
+public class ShySymbol extends Symbol {
+
+<span class="fc" id="L10">    private boolean shown = true;</span>
+
+    /**
+     * Creates a shy symbol with the given color, visible at the start
+     *
+     * @param color CSS name of the color
+     */
+    public ShySymbol(String color) {
+<span class="fc" id="L18">        super(color);</span>
+<span class="fc" id="L19">    }</span>
+
+    /** Tells whether the symbol is visible right now */
+    @Override
+    public boolean isShown() {
+<span class="fc" id="L24">        return shown;</span>
+    }
+
+    /** A shy symbol is marked in white */
+    @Override
+    public String getMarkColor() {
+<span class="fc" id="L30">        return &quot;white&quot;;</span>
+    }
+
+    /** Switches between visible and invisible */
+    @Override
+    public void onSelected() {
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        shown = !shown;</span>
+<span class="fc" id="L37">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

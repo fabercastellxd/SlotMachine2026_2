@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Wheel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">Wheel.java</span></div><h1>Wheel.java</h1><pre class="source lang-java linenums">import java.util.ArrayList;
+
+/**
+ * Represents an individual wheel (reel) in a slot machine
+ * Visually, the wheel is a fixed-size window on the canvas through which
+ * two stacked color blocks scroll vertically to simulate a real slot reel:
+ * one block holds the currently visible symbol and the other holds the
+ * incoming symbol during an animated spin
+ *
+ * @author Mateo Sanchez
+ * @author Maria Angelica Perez
+ * @version 4.0
+ */
+public class Wheel {
+    public static final int HEIGHT = 120;
+    public static final int WIDTH = 40;
+    private static final int DEFAULT_X = 70;
+    private static final int DEFAULT_Y = 15;
+
+    /** Pixels moved per animation frame; smaller = smoother but slower */
+    private static final int SCROLL_STEP_PX = 15;
+
+    /** Side in pixels of the smallest size of a symbol: a dot */
+    private static final int DOT_PX = 4;
+
+    /** Side in pixels of the square that tells the type of the visible symbol */
+    private static final int MARK_SIZE = 10;
+
+    /** Distance in pixels from the corner of the window to the mark */
+    private static final int MARK_OFFSET = 2;
+
+    private Rectangle currentBlock;
+    private Rectangle nextBlock;
+    private Rectangle mark;
+    private ArrayList&lt;Symbol&gt; symbols;
+<span class="fc" id="L36">    private int currentIndex = -1;</span>
+
+<span class="fc" id="L38">    private boolean locked = false;</span>
+    private boolean visible;
+
+    private int windowX;
+    private int windowY;
+    private int currentBlockY;
+    private int nextBlockY;
+
+    /**
+     * Constructs a new visible Wheel at the specified coordinates on the canvas
+     *
+     * @param x The initial X-coordinate on the canvas
+     * @param y The initial Y-coordinate on the canvas
+     */
+    public Wheel(int x, int y) {
+<span class="nc" id="L53">        this(x, y, true);</span>
+<span class="nc" id="L54">    }</span>
+
+    /**
+     * Constructs a new Wheel at the specified coordinates on the canvas
+     * An invisible wheel draws nothing and never waits, so it costs almost
+     * nothing to create and to update
+     *
+     * @param x       The initial X-coordinate on the canvas
+     * @param y       The initial Y-coordinate on the canvas
+     * @param visible Whether the wheel is drawn on the canvas from the start
+     */
+<span class="fc" id="L65">    public Wheel(int x, int y, boolean visible) {</span>
+<span class="fc" id="L66">        this.visible = visible;</span>
+<span class="fc" id="L67">        symbols = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L68">        windowX = x;</span>
+<span class="fc" id="L69">        windowY = y;</span>
+
+<span class="fc" id="L71">        currentBlock = new Rectangle();</span>
+<span class="fc" id="L72">        currentBlock.changeSize(HEIGHT, WIDTH);</span>
+<span class="fc" id="L73">        currentBlock.changeColor(&quot;gray&quot;);</span>
+<span class="fc" id="L74">        currentBlock.moveHorizontal(x - DEFAULT_X);</span>
+<span class="fc" id="L75">        currentBlock.moveVertical(y - DEFAULT_Y);</span>
+<span class="fc" id="L76">        currentBlockY = y;</span>
+<span class="fc" id="L77">        currentBlock.setClip(windowX, windowY, WIDTH, HEIGHT);</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (visible) {</span>
+<span class="nc" id="L79">            currentBlock.makeVisible();</span>
+        }
+
+<span class="fc" id="L82">        nextBlock = new Rectangle();</span>
+<span class="fc" id="L83">        nextBlock.changeSize(HEIGHT, WIDTH);</span>
+<span class="fc" id="L84">        nextBlock.changeColor(&quot;gray&quot;);</span>
+<span class="fc" id="L85">        nextBlock.moveHorizontal(x - DEFAULT_X);</span>
+<span class="fc" id="L86">        nextBlock.moveVertical(y - DEFAULT_Y);</span>
+<span class="fc" id="L87">        nextBlockY = y;</span>
+<span class="fc" id="L88">        nextBlock.setClip(windowX, windowY, WIDTH, HEIGHT);</span>
+
+<span class="fc" id="L90">        mark = new Rectangle();</span>
+<span class="fc" id="L91">        mark.changeSize(MARK_SIZE, MARK_SIZE);</span>
+<span class="fc" id="L92">        mark.moveHorizontal(x + MARK_OFFSET - DEFAULT_X);</span>
+<span class="fc" id="L93">        mark.moveVertical(y + MARK_OFFSET - DEFAULT_Y);</span>
+<span class="fc" id="L94">    }</span>
+
+    /**
+     * Moves the wheel horizontally by a given distance, keeping the
+     * visible window (clip) aligned with both blocks and the mark The mark is
+     * drawn again at the end, so it stays on top of the block
+     *
+     * @param distance The distance in pixels to move horizontally
+     */
+    public void moveHorizontal(int distance) {
+<span class="fc" id="L104">        currentBlock.moveHorizontal(distance);</span>
+<span class="fc" id="L105">        nextBlock.moveHorizontal(distance);</span>
+<span class="fc" id="L106">        mark.moveHorizontal(distance);</span>
+<span class="fc" id="L107">        windowX += distance;</span>
+<span class="fc" id="L108">        updateClip();</span>
+<span class="fc" id="L109">        showMark();</span>
+<span class="fc" id="L110">    }</span>
+
+    /**
+     * Clips the next block to the whole window and the current block to the
+     * region that its symbol occupies
+     */
+    private void updateClip() {
+<span class="fc" id="L117">        nextBlock.setClip(windowX, windowY, WIDTH, HEIGHT);</span>
+<span class="fc" id="L118">        clipCurrentBlock();</span>
+<span class="fc" id="L119">    }</span>
+
+    /**
+     * Clips both blocks to the whole window, as needed while they scroll
+     */
+    private void fullClip() {
+<span class="fc" id="L125">        currentBlock.setClip(windowX, windowY, WIDTH, HEIGHT);</span>
+<span class="fc" id="L126">        nextBlock.setClip(windowX, windowY, WIDTH, HEIGHT);</span>
+<span class="fc" id="L127">    }</span>
+
+    /**
+     * Clips the current block to the region that its symbol occupies: the whole
+     * window for a normal symbol, a smaller region centered in the window for a
+     * symbol that has shrunk, and nothing for a symbol that is not shown
+     */
+    private void clipCurrentBlock() {
+<span class="fc" id="L135">        int w = WIDTH;</span>
+<span class="fc" id="L136">        int h = HEIGHT;</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (currentIndex != -1) {</span>
+<span class="fc" id="L138">            Symbol symbol = symbols.get(currentIndex);</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">            if (symbol.isShown()) {</span>
+<span class="fc" id="L140">                w = Math.max(DOT_PX, WIDTH * symbol.getSizePercent() / 100);</span>
+<span class="fc" id="L141">                h = Math.max(DOT_PX, HEIGHT * symbol.getSizePercent() / 100);</span>
+            } else {
+<span class="fc" id="L143">                w = 0;</span>
+<span class="fc" id="L144">                h = 0;</span>
+            }
+        }
+<span class="fc" id="L147">        currentBlock.setClip(windowX + (WIDTH - w) / 2, windowY + (HEIGHT - h) / 2, w, h);</span>
+<span class="fc" id="L148">    }</span>
+
+    /**
+     * Draws the mark of the visible symbol on top of the window, or hides it
+     * if the symbol has no mark or the wheel is not visible
+     */
+    private void showMark() {
+<span class="fc" id="L155">        String markColor = null;</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (currentIndex != -1) {</span>
+<span class="fc" id="L157">            markColor = symbols.get(currentIndex).getMarkColor();</span>
+        }
+<span class="fc bfc" id="L159" title="All 4 branches covered.">        if (markColor == null || !visible) {</span>
+<span class="fc" id="L160">            mark.makeInvisible();</span>
+        } else {
+<span class="fc" id="L162">            mark.changeColor(markColor);</span>
+<span class="fc" id="L163">            mark.makeVisible();</span>
+        }
+<span class="fc" id="L165">    }</span>
+
+    /** Hides both blocks of the wheel and its mark */
+    public void makeInvisible() {
+<span class="fc" id="L169">        visible = false;</span>
+<span class="fc" id="L170">        currentBlock.makeInvisible();</span>
+<span class="fc" id="L171">        nextBlock.makeInvisible();</span>
+<span class="fc" id="L172">        mark.makeInvisible();</span>
+<span class="fc" id="L173">    }</span>
+
+    /** Makes the visible block of the wheel visible again, with its mark */
+    public void makeVisible() {
+<span class="fc" id="L177">        visible = true;</span>
+<span class="fc" id="L178">        currentBlock.makeVisible();</span>
+<span class="fc" id="L179">        showMark();</span>
+<span class="fc" id="L180">    }</span>
+
+    /**
+     * Adds a normal symbol (color) to the wheel at the specified index
+     *
+     * @param index The 0-based position where the symbol should be inserted
+     * @param color The name of the color representing the symbol
+     */
+    public void addSymbol(int index, String color) {
+<span class="fc" id="L189">        addSymbol(index, new Symbol(color));</span>
+<span class="fc" id="L190">    }</span>
+
+    /**
+     * Adds a symbol to the wheel at the specified index Each wheel must receive
+     * its own symbol object, never one shared with another wheel
+     *
+     * @param index  The 0-based position where the symbol should be inserted
+     * @param symbol The symbol to add
+     */
+    public void addSymbol(int index, Symbol symbol) {
+<span class="fc" id="L200">        symbols.add(index, symbol);</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        if (currentIndex == -1) {</span>
+<span class="fc" id="L202">            currentIndex = 0;</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        } else if (index &lt;= currentIndex) {</span>
+<span class="fc" id="L204">            currentIndex++;</span>
+        }
+<span class="fc" id="L206">        showCurrentSymbol();</span>
+<span class="fc" id="L207">    }</span>
+
+    /**
+     * Removes the first symbol with the given color from the wheel
+     *
+     * @param color The name of the color of the symbol to remove
+     */
+    public void delSymbol(String color) {
+<span class="fc" id="L215">        int index = indexOfColor(color);</span>
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">        if (index == -1) return;</span>
+
+<span class="fc" id="L218">        symbols.remove(index);</span>
+
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">        if (symbols.isEmpty()) {</span>
+<span class="nc" id="L221">            currentIndex = -1;</span>
+        } else {
+<span class="fc bfc" id="L223" title="All 2 branches covered.">            if (index &lt;= currentIndex) {</span>
+<span class="fc" id="L224">                currentIndex--;</span>
+            }
+<span class="fc bfc" id="L226" title="All 2 branches covered.">            if (currentIndex &lt; 0) {</span>
+<span class="fc" id="L227">                currentIndex = 0;</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">            } else if (currentIndex &gt;= symbols.size()) {</span>
+<span class="nc" id="L229">                currentIndex = symbols.size() - 1;</span>
+            }
+        }
+<span class="fc" id="L232">        showCurrentSymbol();</span>
+<span class="fc" id="L233">    }</span>
+
+    /**
+     * Instantly repaints the window with the current symbol: its color, its size,
+     * whether it is shown, and its mark There is no scroll animation Used
+     * whenever the change doesn't need (or isn't allowed) to be animated
+     */
+    private void showCurrentSymbol() {
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">        String color = currentIndex == -1 ? &quot;gray&quot; : symbols.get(currentIndex).getColor();</span>
+<span class="fc" id="L242">        moveBlockTo(currentBlock, currentBlockY, windowY);</span>
+<span class="fc" id="L243">        currentBlockY = windowY;</span>
+<span class="fc" id="L244">        currentBlock.changeColor(color);</span>
+<span class="fc" id="L245">        nextBlock.makeInvisible();</span>
+<span class="fc" id="L246">        clipCurrentBlock();</span>
+<span class="fc" id="L247">        showMark();</span>
+<span class="fc" id="L248">    }</span>
+
+    private void moveBlockTo(Rectangle block, int fromY, int toY) {
+<span class="fc bfc" id="L251" title="All 2 branches covered.">        if (fromY != toY) {</span>
+<span class="fc" id="L252">            block.moveVertical(toY - fromY);</span>
+        }
+<span class="fc" id="L254">    }</span>
+
+    /**
+     * Sets the visible symbol of the wheel to the one with the given color, if it
+     * exists The symbol gets selected
+     *
+     * @param color The name of the color of the symbol to display
+     */
+    public void setSymbol(String color) {
+<span class="fc" id="L263">        int index = indexOfColor(color);</span>
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">        if (index == -1) return;</span>
+<span class="fc" id="L265">        currentIndex = index;</span>
+<span class="fc" id="L266">        symbols.get(currentIndex).onSelected();</span>
+<span class="fc" id="L267">        showCurrentSymbol();</span>
+<span class="fc" id="L268">    }</span>
+
+    /**
+     * Looks for the symbol with the given color
+     *
+     * @param color The name of the color
+     * @return the 0-based index of the symbol, or -1 if there is none
+     */
+    private int indexOfColor(String color) {
+<span class="pc bpc" id="L277" title="1 of 2 branches missed.">        for (int i = 0; i &lt; symbols.size(); i++) {</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">            if (symbols.get(i).getColor().equals(color)) {</span>
+<span class="fc" id="L279">                return i;</span>
+            }
+        }
+<span class="nc" id="L282">        return -1;</span>
+    }
+
+    /**
+     * Rotates the visible symbol by shifting {@code x} positions, instantly
+     * (no scroll animation) Supports both positive and negative steps
+     *
+     * @param x The number of positions to rotate
+     */
+    public void rotate(int x) {
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        if (symbols.isEmpty()) return;</span>
+<span class="nc" id="L293">        currentIndex = (currentIndex + x) % symbols.size();</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">        if (currentIndex &lt; 0) {</span>
+<span class="nc" id="L295">            currentIndex = (currentIndex + symbols.size()) % symbols.size();</span>
+        }
+<span class="nc" id="L297">        showCurrentSymbol();</span>
+<span class="nc" id="L298">    }</span>
+
+    /**
+     * Rotates the wheel {@code steps} positions Negative steps rotate backwards
+     * The steps are first reduced modulo the number of symbols, so even a huge
+     * number of steps costs at most one full turn When {@code animate} is true,
+     * the wheel takes the shortest way (forward or backward) and shows it as a
+     * vertical scroll, one symbol at a time If the wheel moves, the symbol it
+     * stops on gets selected
+     *
+     * @param steps   number of positions to rotate (may be negative or very large)
+     * @param animate whether to show the scroll animation for each step
+     */
+    public void rotate(int steps, boolean animate) {
+<span class="pc bpc" id="L312" title="1 of 2 branches missed.">        if (symbols.isEmpty()) return;</span>
+<span class="fc" id="L313">        int size = symbols.size();</span>
+<span class="fc" id="L314">        int forward = Math.floorMod(steps, size);</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        if (animate) {</span>
+<span class="fc" id="L316">            int backward = size - forward;</span>
+<span class="fc bfc" id="L317" title="All 2 branches covered.">            if (forward &lt;= backward) {</span>
+<span class="fc bfc" id="L318" title="All 2 branches covered.">                for (int i = 0; i &lt; forward; i++) {</span>
+<span class="fc" id="L319">                    animateOneStep(1);</span>
+                }
+            } else {
+<span class="fc bfc" id="L322" title="All 2 branches covered.">                for (int i = 0; i &lt; backward; i++) {</span>
+<span class="fc" id="L323">                    animateOneStep(-1);</span>
+                }
+            }
+<span class="fc" id="L326">        } else {</span>
+<span class="fc" id="L327">            currentIndex = (currentIndex + forward) % size;</span>
+        }
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        if (forward != 0) {</span>
+<span class="fc" id="L330">            symbols.get(currentIndex).onSelected();</span>
+        }
+<span class="fc" id="L332">        showCurrentSymbol();</span>
+<span class="fc" id="L333">    }</span>
+
+    /**
+     * Performs one full scroll cycle in the given direction, then swaps the block
+     * roles so the wheel is ready for the next step Forward (+1): the next symbol
+     * comes in from below while the current one exits above Backward (-1): the
+     * previous symbol comes in from above while the current one exits below
+     * While it scrolls, symbols are drawn at full size
+     *
+     * @param direction +1 to scroll to the next symbol, -1 to scroll to the previous one
+     */
+    private void animateOneStep(int direction) {
+<span class="fc" id="L345">        fullClip();</span>
+<span class="fc" id="L346">        int previousIndex = currentIndex;</span>
+<span class="fc" id="L347">        int newIndex = Math.floorMod(currentIndex + direction, symbols.size());</span>
+
+<span class="fc" id="L349">        moveBlockTo(currentBlock, currentBlockY, windowY);</span>
+<span class="fc" id="L350">        currentBlockY = windowY;</span>
+<span class="pc bpc" id="L351" title="1 of 2 branches missed.">        currentBlock.changeColor(previousIndex == -1 ? &quot;gray&quot; : symbols.get(previousIndex).getColor());</span>
+
+<span class="fc" id="L353">        int entryY = windowY + direction * HEIGHT;</span>
+<span class="fc" id="L354">        moveBlockTo(nextBlock, nextBlockY, entryY);</span>
+<span class="fc" id="L355">        nextBlockY = entryY;</span>
+<span class="fc" id="L356">        nextBlock.changeColor(symbols.get(newIndex).getColor());</span>
+<span class="fc" id="L357">        nextBlock.makeVisible();</span>
+
+<span class="fc" id="L359">        int remaining = HEIGHT;</span>
+<span class="fc bfc" id="L360" title="All 2 branches covered.">        while (remaining &gt; 0) {</span>
+<span class="fc" id="L361">            int delta = direction * Math.min(SCROLL_STEP_PX, remaining);</span>
+<span class="fc" id="L362">            currentBlock.moveVertical(-delta);</span>
+<span class="fc" id="L363">            currentBlockY -= delta;</span>
+<span class="fc" id="L364">            nextBlock.moveVertical(-delta);</span>
+<span class="fc" id="L365">            nextBlockY -= delta;</span>
+<span class="fc" id="L366">            remaining -= Math.abs(delta);</span>
+<span class="fc" id="L367">        }</span>
+
+<span class="fc" id="L369">        currentBlock.makeInvisible();</span>
+<span class="fc" id="L370">        Rectangle exited = currentBlock;</span>
+<span class="fc" id="L371">        int exitedY = currentBlockY;</span>
+<span class="fc" id="L372">        currentBlock = nextBlock;</span>
+<span class="fc" id="L373">        currentBlockY = nextBlockY;</span>
+<span class="fc" id="L374">        nextBlock = exited;</span>
+<span class="fc" id="L375">        nextBlockY = exitedY;</span>
+<span class="fc" id="L376">        nextBlock.makeInvisible();</span>
+
+<span class="fc" id="L378">        currentIndex = newIndex;</span>
+<span class="fc" id="L379">    }</span>
+
+    /**
+     * Returns the color name of the currently visible symbol A symbol that is
+     * not shown (a hidden shy symbol) still reports its color
+     *
+     * @return The color of the visible symbol, or {@code null} if no symbols exist
+     */
+    public String getVisibleSymbol() {
+<span class="pc bpc" id="L388" title="1 of 4 branches missed.">        if (currentIndex == -1 || symbols.isEmpty()) {</span>
+<span class="fc" id="L389">            return null;</span>
+        }
+<span class="fc" id="L391">        return symbols.get(currentIndex).getColor();</span>
+    }
+
+    /**
+     * Returns the symbol object that the wheel is showing
+     *
+     * @return The current symbol, or {@code null} if no symbols exist
+     */
+    public Symbol getCurrentSymbol() {
+<span class="pc bpc" id="L400" title="1 of 2 branches missed.">        if (currentIndex == -1) {</span>
+<span class="nc" id="L401">            return null;</span>
+        }
+<span class="fc" id="L403">        return symbols.get(currentIndex);</span>
+    }
+
+    /**
+     * Tells whether the symbol that the wheel is showing is wild (a joker)
+     *
+     * @return true if the wheel shows a wild symbol; false if it shows a normal one or none
+     */
+    public boolean isWild() {
+<span class="fc bfc" id="L412" title="All 2 branches covered.">        if (currentIndex == -1) {</span>
+<span class="fc" id="L413">            return false;</span>
+        }
+<span class="fc" id="L415">        return symbols.get(currentIndex).isWild();</span>
+    }
+
+    /**
+     * Returns the 1-based indicator position of the currently visible symbol
+     *
+     * @return The 1-based index position of the visible symbol, or 0 if none
+     */
+    public int getIndicator() {
+<span class="nc" id="L424">        return currentIndex + 1;</span>
+    }
+
+    /**
+     * Returns the total number of symbols in this wheel
+     *
+     * @return The number of symbols in the wheel
+     */
+    public int size() {
+<span class="fc" id="L433">        return symbols.size();</span>
+    }
+
+    public void lock(){
+<span class="fc" id="L437">        locked = true;</span>
+<span class="fc" id="L438">    }</span>
+
+    public void unlock(){
+<span class="fc" id="L441">        locked = false;</span>
+<span class="fc" id="L442">    }</span>
+
+    public boolean isLocked(){
+<span class="fc" id="L445">        return locked;</span>
+    }
+
+    /**
+     * Tells whether this wheel accepts being locked A normal wheel does
+     *
+     * @return true if the wheel can be locked
+     */
+    public boolean canBeLocked() {
+<span class="fc" id="L454">        return true;</span>
+    }
+
+    /**
+     * Tells whether this wheel accepts exchanging its symbol with another wheel
+     * A normal wheel does
+     *
+     * @return true if the wheel can be swapped
+     */
+    public boolean canBeSwapped() {
+<span class="fc" id="L464">        return true;</span>
+    }
+
+    /**
+     * Tells whether this wheel accepts being removed from the machine A normal wheel does
+     *
+     * @return true if the wheel can be deleted
+     */
+    public boolean canBeDeleted() {
+<span class="fc" id="L473">        return true;</span>
+    }
+
+    /**
+     * Tells every symbol of this wheel that the wheel is spinning An ephemeral
+     * symbol shrinks Subclasses that spin in their own way must call it too
+     */
+    public void notifySpin() {
+<span class="fc bfc" id="L481" title="All 2 branches covered.">        for (int i = 0; i &lt; symbols.size(); i++) {</span>
+<span class="fc" id="L482">            symbols.get(i).onSpin();</span>
+        }
+<span class="fc" id="L484">    }</span>
+
+    /**
+     * Spins this wheel as part of the machine A normal wheel notifies its
+     * symbols and rotates; subclasses can override it to behave differently
+     * (for example, by looking at the wheel on their left)
+     *
+     * @param left    the wheel on the left of this one, or null if it is the first
+     * @param steps   number of positions to rotate (may be negative or very large)
+     * @param animate whether to show the scroll animation
+     */
+    public void spin(Wheel left, int steps, boolean animate) {
+<span class="fc" id="L496">        notifySpin();</span>
+<span class="fc" id="L497">        rotate(steps, animate);</span>
+<span class="fc" id="L498">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

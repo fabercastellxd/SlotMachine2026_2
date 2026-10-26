@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Canvas.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">Canvas.java</span></div><h1>Canvas.java</h1><pre class="source lang-java linenums">import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+import java.util.*;
+
+/**
+ * Canvas is a class to allow for simple graphical drawing on a canvas.
+ * This is a modification of the general purpose Canvas, specially made for
+ * the BlueJ &quot;shapes&quot; example. 
+ *
+ * @author Bruce Quig
+ * @author Michael Kolling (mik)
+ *
+ * @version 1.6 (shapes)
+ */
+public final class Canvas {
+
+    private static Canvas canvasSingleton;
+
+    public static Canvas getCanvas() {
+<span class="fc" id="L21">        return getCanvas(500, 500, true);</span>
+    }
+
+    private static final int SCREEN_MARGIN = 80;
+
+    public static Canvas getCanvas(int width, int height) {
+<span class="nc" id="L27">        return getCanvas(width, height, true);</span>
+    }
+
+    /**
+     * Nuevo constructor para manejar las dimensiones acorde a la cantidad de ruedas.
+     */
+    public static Canvas getCanvas(int width, int height, boolean makeVisible) {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (canvasSingleton == null) {</span>
+<span class="fc" id="L35">            canvasSingleton = new Canvas(&quot;BlueJ Shapes Demo&quot;, width, height, Color.white);</span>
+<span class="fc" id="L36">            canvasSingleton.setVisible(makeVisible);</span>
+        }
+<span class="fc" id="L38">        return canvasSingleton;</span>
+    }
+
+    /** CSS color names (lowercase) and their colors. */
+<span class="fc" id="L42">    private static final HashMap&lt;String, Color&gt; CSS_COLORS = new HashMap&lt;String, Color&gt;();</span>
+    static {
+<span class="fc" id="L44">        define(&quot;black&quot;, 0, 0, 0);          define(&quot;white&quot;, 255, 255, 255);   define(&quot;gray&quot;, 128, 128, 128);</span>
+<span class="fc" id="L45">        define(&quot;grey&quot;, 128, 128, 128);     define(&quot;gold&quot;, 255, 215, 0);      define(&quot;magenta&quot;, 255, 0, 255);</span>
+<span class="fc" id="L46">        define(&quot;red&quot;, 255, 0, 0);          define(&quot;blue&quot;, 0, 0, 255);        define(&quot;green&quot;, 0, 128, 0);</span>
+<span class="fc" id="L47">        define(&quot;yellow&quot;, 255, 255, 0);     define(&quot;orange&quot;, 255, 165, 0);    define(&quot;purple&quot;, 128, 0, 128);</span>
+<span class="fc" id="L48">        define(&quot;pink&quot;, 255, 192, 203);     define(&quot;brown&quot;, 165, 42, 42);     define(&quot;cyan&quot;, 0, 255, 255);</span>
+<span class="fc" id="L49">        define(&quot;lime&quot;, 0, 255, 0);         define(&quot;navy&quot;, 0, 0, 128);        define(&quot;teal&quot;, 0, 128, 128);</span>
+<span class="fc" id="L50">        define(&quot;maroon&quot;, 128, 0, 0);       define(&quot;olive&quot;, 128, 128, 0);     define(&quot;coral&quot;, 255, 127, 80);</span>
+<span class="fc" id="L51">        define(&quot;salmon&quot;, 250, 128, 114);   define(&quot;crimson&quot;, 220, 20, 60);   define(&quot;indigo&quot;, 75, 0, 130);</span>
+<span class="fc" id="L52">        define(&quot;violet&quot;, 238, 130, 238);   define(&quot;turquoise&quot;, 64, 224, 208); define(&quot;tan&quot;, 210, 180, 140);</span>
+<span class="fc" id="L53">        define(&quot;khaki&quot;, 240, 230, 140);    define(&quot;orchid&quot;, 218, 112, 214);  define(&quot;plum&quot;, 221, 160, 221);</span>
+<span class="fc" id="L54">        define(&quot;tomato&quot;, 255, 99, 71);     define(&quot;chocolate&quot;, 210, 105, 30); define(&quot;sienna&quot;, 160, 82, 45);</span>
+<span class="fc" id="L55">        define(&quot;peru&quot;, 205, 133, 63);      define(&quot;skyblue&quot;, 135, 206, 235); define(&quot;steelblue&quot;, 70, 130, 180);</span>
+<span class="fc" id="L56">        define(&quot;royalblue&quot;, 65, 105, 225); define(&quot;dodgerblue&quot;, 30, 144, 255); define(&quot;slateblue&quot;, 106, 90, 205);</span>
+<span class="fc" id="L57">        define(&quot;seagreen&quot;, 46, 139, 87);   define(&quot;forestgreen&quot;, 34, 139, 34); define(&quot;limegreen&quot;, 50, 205, 50);</span>
+<span class="fc" id="L58">        define(&quot;springgreen&quot;, 0, 255, 127); define(&quot;chartreuse&quot;, 127, 255, 0); define(&quot;darkorange&quot;, 255, 140, 0);</span>
+<span class="fc" id="L59">        define(&quot;hotpink&quot;, 255, 105, 180);  define(&quot;deeppink&quot;, 255, 20, 147); define(&quot;firebrick&quot;, 178, 34, 34);</span>
+<span class="fc" id="L60">        define(&quot;darkred&quot;, 139, 0, 0);      define(&quot;darkgreen&quot;, 0, 100, 0);   define(&quot;darkblue&quot;, 0, 0, 139);</span>
+<span class="fc" id="L61">        define(&quot;aquamarine&quot;, 127, 255, 212); define(&quot;lavender&quot;, 230, 230, 250); define(&quot;beige&quot;, 245, 245, 220);</span>
+<span class="fc" id="L62">        define(&quot;mediumpurple&quot;, 147, 112, 219); define(&quot;goldenrod&quot;, 218, 165, 32);</span>
+<span class="fc" id="L63">    }</span>
+
+    /** Registers a CSS color name with its RGB values. */
+    private static void define(String name, int r, int g, int b) {
+<span class="fc" id="L67">        CSS_COLORS.put(name, new Color(r, g, b));</span>
+<span class="fc" id="L68">    }</span>
+
+    /**
+     * Returns the color that a CSS color name stands for.
+     * @param colorName a CSS color name, in any letter case
+     * @return the color, or {@code null} if the name is not known
+     */
+    public static Color colorFor(String colorName) {
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        return colorName == null ? null : CSS_COLORS.get(colorName.toLowerCase());</span>
+    }
+
+    // ----- instance part -----
+
+    private JFrame frame;
+    private CanvasPane canvas;
+    private JScrollPane scroll;
+<span class="fc" id="L84">    private boolean viewCentered = false;</span>
+    private Graphics2D graphic;
+    private Color backgroundColour;
+    private Image canvasImage;
+    private List&lt;Object&gt; objects;
+    private HashMap&lt;Object, ShapeDescription&gt; shapes;
+
+    /**
+     * Create a Canvas. The drawing area keeps the requested size, but the window is
+     * never larger than the screen: when the drawing is wider or taller, the window
+     * shows scroll bars.
+     * @param title    title to appear in Canvas Frame
+     * @param width    the desired width for the canvas
+     * @param height   the desired height for the canvas
+     * @param bgColour the desired background colour of the canvas
+     */
+<span class="fc" id="L100">    private Canvas(String title, int width, int height, Color bgColour) {</span>
+<span class="fc" id="L101">        frame = new JFrame();</span>
+<span class="fc" id="L102">        canvas = new CanvasPane();</span>
+<span class="fc" id="L103">        canvas.setPreferredSize(new Dimension(width, height));</span>
+<span class="fc" id="L104">        scroll = new JScrollPane(canvas);</span>
+<span class="fc" id="L105">        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();</span>
+<span class="fc" id="L106">        scroll.getViewport().setPreferredSize(new Dimension(</span>
+<span class="fc" id="L107">            Math.min(width, screen.width - SCREEN_MARGIN),</span>
+<span class="fc" id="L108">            Math.min(height, screen.height - SCREEN_MARGIN)));</span>
+<span class="fc" id="L109">        frame.setContentPane(scroll);</span>
+<span class="fc" id="L110">        frame.setTitle(title);</span>
+<span class="fc" id="L111">        backgroundColour = bgColour;</span>
+<span class="fc" id="L112">        frame.pack();</span>
+<span class="fc" id="L113">        objects = new ArrayList&lt;Object&gt;();</span>
+<span class="fc" id="L114">        shapes = new HashMap&lt;Object, ShapeDescription&gt;();</span>
+<span class="fc" id="L115">    }</span>
+
+    /**
+     * Set the canvas visibility and brings canvas to the front of screen
+     * when made visible. The first time it is shown, the view is centered
+     * horizontally, which is where the machine is drawn.
+     * @param visible boolean value representing the desired visibility of
+     * the canvas (true or false)
+     */
+    public void setVisible(boolean visible) {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (graphic == null) {</span>
+<span class="fc" id="L126">            Dimension size = canvas.getPreferredSize();</span>
+<span class="fc" id="L127">            canvasImage = canvas.createImage(size.width, size.height);</span>
+<span class="fc" id="L128">            graphic = (Graphics2D) canvasImage.getGraphics();</span>
+<span class="fc" id="L129">            graphic.setColor(backgroundColour);</span>
+<span class="fc" id="L130">            graphic.fillRect(0, 0, size.width, size.height);</span>
+<span class="fc" id="L131">            graphic.setColor(Color.black);</span>
+        }
+<span class="fc" id="L133">        frame.setVisible(visible);</span>
+<span class="fc bfc" id="L134" title="All 4 branches covered.">        if (visible &amp;&amp; !viewCentered) {</span>
+<span class="fc" id="L135">            centerView();</span>
+<span class="fc" id="L136">            viewCentered = true;</span>
+        }
+<span class="fc" id="L138">    }</span>
+
+    /**
+     * Scrolls the window so the middle of the drawing area is in the middle of the window.
+     */
+    private void centerView() {
+<span class="fc" id="L144">        JViewport viewport = scroll.getViewport();</span>
+<span class="fc" id="L145">        int x = Math.max(0, (canvas.getPreferredSize().width - viewport.getExtentSize().width) / 2);</span>
+<span class="fc" id="L146">        viewport.setViewPosition(new Point(x, 0));</span>
+<span class="fc" id="L147">    }</span>
+
+    /**
+     * Tells whether the canvas window is currently shown on screen.
+     * @return {@code true} if the window is visible.
+     */
+    public boolean isVisible() {
+<span class="fc" id="L154">        return frame.isVisible();</span>
+    }
+
+    public void draw(Object referenceObject, String color, Shape shape) {
+<span class="fc" id="L158">        draw(referenceObject, color, shape, null);</span>
+<span class="fc" id="L159">    }</span>
+
+    /**
+     * Draw a given shape onto the canvas, optionally clipped to a region.
+     * @param referenceObject an object to define identity for this shape
+     * @param color           the color of the shape
+     * @param shape           the shape object to be drawn on the canvas
+     * @param clip            the visible region for this shape, or null for no clipping
+     */
+    public void draw(Object referenceObject, String color, Shape shape, Shape clip) {
+<span class="fc" id="L169">        objects.remove(referenceObject);</span>
+<span class="fc" id="L170">        objects.add(referenceObject);</span>
+<span class="fc" id="L171">        shapes.put(referenceObject, new ShapeDescription(shape, color, clip));</span>
+<span class="fc" id="L172">        redraw();</span>
+<span class="fc" id="L173">    }</span>
+
+    /**
+     * Erase a given shape from the screen.
+     * @param referenceObject the shape object to be erased 
+     */
+    public void erase(Object referenceObject) {
+<span class="fc" id="L180">        objects.remove(referenceObject);</span>
+<span class="fc" id="L181">        shapes.remove(referenceObject);</span>
+<span class="fc" id="L182">        redraw();</span>
+<span class="fc" id="L183">    }</span>
+
+    /**
+     * Set the foreground colour of the Canvas from a CSS color name.
+     * An unknown name is drawn in black.
+     * @param colorString the CSS name of the new foreground colour
+     */
+    public void setForegroundColor(String colorString) {
+<span class="fc" id="L191">        Color color = colorFor(colorString);</span>
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        graphic.setColor(color != null ? color : Color.black);</span>
+<span class="fc" id="L193">    }</span>
+
+    /**
+     * Wait for a specified number of milliseconds before finishing.
+     * This provides an easy way to specify a small delay which can be
+     * used when producing animations.
+     * @param milliseconds the number 
+     */
+    public void wait(int milliseconds) {
+        try {
+<span class="fc" id="L203">            Thread.sleep(milliseconds);</span>
+<span class="nc" id="L204">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L205">            Thread.currentThread().interrupt();</span>
+<span class="fc" id="L206">        }</span>
+<span class="fc" id="L207">    }</span>
+
+    /**
+     * Redraw all shapes currently on the Canvas.
+     */
+    private void redraw() {
+<span class="fc" id="L213">        erase();</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        for (Iterator&lt;Object&gt; i = objects.iterator(); i.hasNext(); ) {</span>
+<span class="fc" id="L215">            shapes.get(i.next()).draw(graphic);</span>
+        }
+<span class="fc" id="L217">        canvas.repaint();</span>
+<span class="fc" id="L218">    }</span>
+
+    /**
+     * Erase the whole canvas. (Does not repaint.)
+     */
+    private void erase() {
+<span class="fc" id="L224">        Color original = graphic.getColor();</span>
+<span class="fc" id="L225">        graphic.setColor(backgroundColour);</span>
+<span class="fc" id="L226">        Dimension size = canvas.getSize();</span>
+<span class="fc" id="L227">        graphic.fill(new java.awt.Rectangle(0, 0, size.width, size.height));</span>
+<span class="fc" id="L228">        graphic.setColor(original);</span>
+<span class="fc" id="L229">    }</span>
+
+    /************************************************************************
+     * Inner class CanvasPane - the actual canvas component contained in the
+     * Canvas frame.
+     */
+<span class="fc" id="L235">    private final class CanvasPane extends JPanel {</span>
+        @Override
+        public void paint(Graphics g) {
+<span class="fc" id="L238">            g.drawImage(canvasImage, 0, 0, null);</span>
+<span class="fc" id="L239">        }</span>
+    }
+
+    /************************************************************************
+     * Inner class ShapeDescription - records shape details for redrawing.
+     */
+    private class ShapeDescription {
+        private Shape shape;
+        private String colorString;
+        private Shape clip;
+
+<span class="fc" id="L250">        public ShapeDescription(Shape shape, String color, Shape clip) {</span>
+<span class="fc" id="L251">            this.shape = shape;</span>
+<span class="fc" id="L252">            colorString = color;</span>
+<span class="fc" id="L253">            this.clip = clip;</span>
+<span class="fc" id="L254">        }</span>
+
+        public void draw(Graphics2D graphic) {
+<span class="fc" id="L257">            setForegroundColor(colorString);</span>
+<span class="fc" id="L258">            Shape oldClip = graphic.getClip();</span>
+<span class="fc bfc" id="L259" title="All 2 branches covered.">            if (clip != null) {</span>
+<span class="fc" id="L260">                graphic.setClip(clip);</span>
+            }
+<span class="fc" id="L262">            graphic.draw(shape);</span>
+<span class="fc" id="L263">            graphic.fill(shape);</span>
+<span class="fc" id="L264">            graphic.setClip(oldClip);</span>
+<span class="fc" id="L265">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

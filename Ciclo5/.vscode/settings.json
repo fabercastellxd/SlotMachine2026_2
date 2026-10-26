@@ -1,0 +1,13 @@
+{
+    "java.project.sourcePaths": ["SlotMachine-C5/src/main/java", "SlotMachine-C5/src/test/java"],
+    "java.project.outputPath": "SlotMachine-C5/bin",
+    "java.project.referencedLibraries": ["SlotMachine-C5/lib/**/*.jar"],
+    "java.import.maven.enabled": false,
+    "java.import.gradle.enabled": false,
+    "files.encoding": "utf8",
+    "files.exclude": {
+        "**/build": true,
+        "**/bin": true,
+        "**/target": true
+    }
+}

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Circle.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">Circle.java</span></div><h1>Circle.java</h1><pre class="source lang-java linenums">import java.awt.geom.*;
+
+/**
+ * A circle that can be manipulated and that draws itself on a canvas.
+ * 
+ * @author  Michael Kolling and David J. Barnes
+ * @version 1.0.  (15 July 2000) 
+ */
+
+public class Circle{
+
+    public static final double PI=3.1416;
+    
+    private int diameter;
+    private int xPosition;
+    private int yPosition;
+    private String color;
+    private boolean isVisible;
+    
+
+<span class="fc" id="L21">    public Circle(){</span>
+<span class="fc" id="L22">        diameter = 30;</span>
+<span class="fc" id="L23">        xPosition = 20;</span>
+<span class="fc" id="L24">        yPosition = 15;</span>
+<span class="fc" id="L25">        color = &quot;blue&quot;;</span>
+<span class="fc" id="L26">        isVisible = false;</span>
+<span class="fc" id="L27">    }</span>
+
+
+       
+    public void makeVisible(){
+<span class="fc" id="L32">        isVisible = true;</span>
+<span class="fc" id="L33">        draw();</span>
+<span class="fc" id="L34">    }</span>
+    
+
+    public void makeInvisible(){
+<span class="fc" id="L38">        erase();</span>
+<span class="fc" id="L39">        isVisible = false;</span>
+<span class="fc" id="L40">    }</span>
+
+    private void draw(){
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if(isVisible) {</span>
+<span class="fc" id="L44">            Canvas canvas = Canvas.getCanvas();</span>
+<span class="fc" id="L45">            canvas.draw(this, color, </span>
+                new Ellipse2D.Double(xPosition, yPosition, 
+                diameter, diameter));
+<span class="fc" id="L48">            canvas.wait(10);</span>
+        }
+<span class="fc" id="L50">    }</span>
+
+    private void erase(){
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if(isVisible) {</span>
+<span class="fc" id="L54">            Canvas canvas = Canvas.getCanvas();</span>
+<span class="fc" id="L55">            canvas.erase(this);</span>
+        }
+<span class="fc" id="L57">    }</span>
+    
+    /**
+     * Move the circle a few pixels to the right.
+     */
+    public void moveRight(){
+<span class="nc" id="L63">        moveHorizontal(20);</span>
+<span class="nc" id="L64">    }</span>
+
+    /**
+     * Move the circle a few pixels to the left.
+     */
+    public void moveLeft(){
+<span class="nc" id="L70">        moveHorizontal(-20);</span>
+<span class="nc" id="L71">    }</span>
+
+    /**
+     * Move the circle a few pixels up.
+     */
+    public void moveUp(){
+<span class="nc" id="L77">        moveVertical(-20);</span>
+<span class="nc" id="L78">    }</span>
+
+    /**
+     * Move the circle a few pixels down.
+     */
+    public void moveDown(){
+<span class="nc" id="L84">        moveVertical(20);</span>
+<span class="nc" id="L85">    }</span>
+
+    /**
+     * Move the circle horizontally.
+     * @param distance the desired distance in pixels
+     */
+    public void moveHorizontal(int distance){
+<span class="fc" id="L92">        erase();</span>
+<span class="fc" id="L93">        xPosition += distance;</span>
+<span class="fc" id="L94">        draw();</span>
+<span class="fc" id="L95">    }</span>
+
+    /**
+     * Move the circle vertically.
+     * @param distance the desired distance in pixels
+     */
+    public void moveVertical(int distance){
+<span class="fc" id="L102">        erase();</span>
+<span class="fc" id="L103">        yPosition += distance;</span>
+<span class="fc" id="L104">        draw();</span>
+<span class="fc" id="L105">    }</span>
+
+    /**
+     * Slowly move the circle horizontally.
+     * @param distance the desired distance in pixels
+     */
+    public void slowMoveHorizontal(int distance){
+        int delta;
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if(distance &lt; 0) {</span>
+<span class="nc" id="L115">            delta = -1;</span>
+<span class="nc" id="L116">            distance = -distance;</span>
+        } else {
+<span class="nc" id="L118">            delta = 1;</span>
+        }
+
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        for(int i = 0; i &lt; distance; i++){</span>
+<span class="nc" id="L122">            xPosition += delta;</span>
+<span class="nc" id="L123">            draw();</span>
+        }
+<span class="nc" id="L125">    }</span>
+
+    /**
+     * Slowly move the circle vertically
+     * @param distance the desired distance in pixels
+     */
+    public void slowMoveVertical(int distance){
+        int delta;
+
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if(distance &lt; 0) {</span>
+<span class="nc" id="L135">            delta = -1;</span>
+<span class="nc" id="L136">            distance = -distance;</span>
+        }else {
+<span class="nc" id="L138">            delta = 1;</span>
+        }
+
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        for(int i = 0; i &lt; distance; i++){</span>
+<span class="nc" id="L142">            yPosition += delta;</span>
+<span class="nc" id="L143">            draw();</span>
+        }
+<span class="nc" id="L145">    }</span>
+
+    /**
+     * Change the size.
+     * @param newDiameter the new size (in pixels). Size must be &gt;=0.
+     */
+    public void changeSize(int newDiameter){
+<span class="fc" id="L152">        erase();</span>
+<span class="fc" id="L153">        diameter = newDiameter;</span>
+<span class="fc" id="L154">        draw();</span>
+<span class="fc" id="L155">    }</span>
+
+    /**
+     * Change the color. 
+     * @param color the new color. Valid colors are &quot;red&quot;, &quot;yellow&quot;, &quot;blue&quot;, &quot;green&quot;,
+     * &quot;magenta&quot; and &quot;black&quot;.
+     */
+    public void changeColor(String newColor){
+<span class="fc" id="L163">        color = newColor;</span>
+<span class="fc" id="L164">        draw();</span>
+<span class="fc" id="L165">    }</span>
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

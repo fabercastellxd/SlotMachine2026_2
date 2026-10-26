@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Symbol.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">Symbol.java</span></div><h1>Symbol.java</h1><pre class="source lang-java linenums">/**
+ * A symbol of a wheel, identified by a color This is the normal symbol:
+ * it never changes The other types of symbols extend this class and override
+ * its methods
+ *
+ * @author Mateo Sanchez
+ * @author Maria Angelica Perez
+ */
+public class Symbol {
+
+    private String color;
+
+    /**
+     * Creates a symbol with the given color
+     *
+     * @param color CSS name of the color
+     */
+<span class="fc" id="L18">    public Symbol(String color) {</span>
+<span class="fc" id="L19">        this.color = color;</span>
+<span class="fc" id="L20">    }</span>
+
+    /**
+     * Returns the color that identifies this symbol
+     *
+     * @return the CSS name of the color
+     */
+    public String getColor() {
+<span class="fc" id="L28">        return color;</span>
+    }
+
+    /**
+     * Returns the size of the symbol as a percentage of the wheel window
+     *
+     * @return 100 for a normal symbol
+     */
+    public int getSizePercent() {
+<span class="fc" id="L37">        return 100;</span>
+    }
+
+    /**
+     * Tells whether the symbol is drawn A symbol that is not shown still
+     * counts as its color for the jackpot
+     *
+     * @return true for a normal symbol
+     */
+    public boolean isShown() {
+<span class="fc" id="L47">        return true;</span>
+    }
+
+    /**
+     * Returns the color of the small square that tells the type of the symbol
+     *
+     * @return the CSS name of the color, or null if the symbol has no mark
+     */
+    public String getMarkColor() {
+<span class="fc" id="L56">        return null;</span>
+    }
+
+    /**
+     * Called on every symbol of a wheel each time the wheel spins
+     * A normal symbol does nothing
+     */
+    public void onSpin() {
+<span class="fc" id="L64">    }</span>
+
+    /**
+     * Called when the symbol gets selected: the wheel stops on it
+     * A normal symbol does nothing
+     */
+    public void onSelected() {
+<span class="fc" id="L71">    }</span>
+    
+        /**
+     * Tells whether the symbol is wild: a wild symbol counts as any color
+     * when the machine checks for a jackpot
+     *
+     * @return false for a normal symbol
+     */
+    public boolean isWild() {
+<span class="fc" id="L80">        return false;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,866 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SlotMachine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">SlotMachine.java</span></div><h1>SlotMachine.java</h1><pre class="source lang-java linenums">import java.util.ArrayList;
+import javax.swing.JOptionPane;
+import java.util.Random;
+import java.util.HashSet;
+/**
+ * Represents a slot machine simulator
+ * The machine manages a dynamic set of wheels (between {@link #MIN_WHEELS} and {@link #MAX_WHEELS}),
+ * a collection of distinct symbols (represented as colors), graphical elements (top, middle, and base rectangles),
+ * and game state operations such as spinning, jackpot verification, and visibility toggling
+ *
+ * @author Mateo Sanchez
+ * @author Maria Angelica Perez
+ * @version 12/09/26
+ */
+public class SlotMachine {
+
+    /**
+     * Minimum number of wheels permitted in the slot machine
+     */
+    public static final int MIN_WHEELS = 3;
+
+    /**
+     * Maximum number of wheels permitted in the slot machine
+     */
+    public static final int MAX_WHEELS = 50;
+
+    private static final int DEFAULT_X = 70;
+    private static final int DEFAULT_Y = 15;
+    private static final int WHEEL_WIDTH = 40;
+    private static final int WHEEL_SPACING = 10;
+    private static final int MARGIN = 15;
+
+    private static final int TOP_HEIGHT = 20;
+    private static final int MIDDLE_HEIGHT = 150;
+    private static final int BASE_HEIGHT = 20;
+    private static final int INITIAL_Y = 50;
+    private static final int CANVAS_MARGIN = 30;
+
+<span class="fc" id="L39">    private static final int CANVAS_WIDTH = middleWidth(MAX_WHEELS) + 2 * CANVAS_MARGIN;</span>
+    private static final int CANVAS_HEIGHT = INITIAL_Y + TOP_HEIGHT + MIDDLE_HEIGHT + BASE_HEIGHT + CANVAS_MARGIN;
+<span class="fc" id="L41">    private static final int CENTER_X = CANVAS_WIDTH / 2;</span>
+
+    private static final int TOP_OVERHANG = 20;
+    private static final int BASE_OVERHANG = 20;
+
+    private Rectangle topRectangle;
+    private Rectangle middleRectangle;
+    private Rectangle baseRectangle;
+
+    private ArrayList&lt;Wheel&gt; wheelList;
+    private ArrayList&lt;String&gt; symbols;
+    private ArrayList&lt;String&gt; symbolTypes;
+    
+    private boolean ok;
+
+    private int middleWidth;
+    private int topWidth;
+    private int baseWidth;
+
+    private boolean visible;
+
+    /**
+     * Calculates the width of the middle section housing the given number of wheels
+     *
+     * @param numWheels The number of wheels
+     * @return The calculated width in pixels
+     */
+    private static int middleWidth(int numWheels) {
+<span class="fc" id="L69">        return (2 * MARGIN) + (numWheels * WHEEL_WIDTH) + ((numWheels - 1) * WHEEL_SPACING);</span>
+    }
+
+    /**
+     * Constructs a new SlotMachine that starts visible, as usual
+     */
+    public SlotMachine() {
+<span class="nc" id="L76">        this(true);</span>
+<span class="nc" id="L77">    }</span>
+
+    /**
+     * Constructs and initializes a new SlotMachine instance
+     * Sets up the canvas, initializes default wheels ({@link #MIN_WHEELS}), builds the machine structure
+     * (top, middle, base), and renders all components visibly if requested
+     *
+     * @param startVisible whether the canvas window should be shown immediately;
+     *                     pass false to run the machine fully invisible from the
+     *                     start (used by unit tests, so the window never appears
+     *                     at all, not even briefly)
+     */
+<span class="fc" id="L89">    public SlotMachine(boolean startVisible) {</span>
+<span class="fc" id="L90">        Canvas.getCanvas(CANVAS_WIDTH, CANVAS_HEIGHT, startVisible);</span>
+<span class="fc" id="L91">        visible = startVisible;</span>
+
+<span class="fc" id="L93">        wheelList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L94">        symbols = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L95">        symbolTypes = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L96">        ok = true;</span>
+
+<span class="fc" id="L98">        topRectangle = new Rectangle();</span>
+<span class="fc" id="L99">        middleRectangle = new Rectangle();</span>
+<span class="fc" id="L100">        baseRectangle = new Rectangle();</span>
+
+<span class="fc" id="L102">        updateWidths(MIN_WHEELS);</span>
+
+<span class="fc" id="L104">        topRectangle.changeSize(TOP_HEIGHT, topWidth);</span>
+<span class="fc" id="L105">        middleRectangle.changeSize(MIDDLE_HEIGHT, middleWidth);</span>
+<span class="fc" id="L106">        baseRectangle.changeSize(BASE_HEIGHT, baseWidth);</span>
+
+<span class="fc" id="L108">        topRectangle.changeColor(&quot;gold&quot;);</span>
+<span class="fc" id="L109">        middleRectangle.changeColor(&quot;gold&quot;);</span>
+<span class="fc" id="L110">        baseRectangle.changeColor(&quot;gold&quot;);</span>
+
+<span class="fc" id="L112">        placeOnAxis(topRectangle, topWidth, INITIAL_Y);</span>
+<span class="fc" id="L113">        placeOnAxis(middleRectangle, middleWidth, INITIAL_Y + TOP_HEIGHT);</span>
+<span class="fc" id="L114">        placeOnAxis(baseRectangle, baseWidth, INITIAL_Y + TOP_HEIGHT + MIDDLE_HEIGHT);</span>
+
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        if (startVisible) {</span>
+<span class="nc" id="L117">            topRectangle.makeVisible();</span>
+<span class="nc" id="L118">            middleRectangle.makeVisible();</span>
+<span class="nc" id="L119">            baseRectangle.makeVisible();</span>
+        }
+
+<span class="fc" id="L122">        int yWheel = INITIAL_Y + TOP_HEIGHT + 15;</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        for (int i = 1; i &lt;= MIN_WHEELS; i++) {</span>
+<span class="fc" id="L124">            wheelList.add(createWheel(&quot;normal&quot;, wheelX(i), yWheel));     </span>
+        }
+<span class="fc" id="L126">    }</span>
+    
+    /**
+     * Recalculates the dimensions for the middle, top, and base sections of the machine
+     * based on the specified number of wheels
+     *
+     * @param numWheels The current number of wheels
+     */
+    private void updateWidths(int numWheels) {
+<span class="fc" id="L135">        middleWidth = middleWidth(numWheels);</span>
+<span class="fc" id="L136">        topWidth = middleWidth + 2 * TOP_OVERHANG;</span>
+<span class="fc" id="L137">        baseWidth = middleWidth + 2 * BASE_OVERHANG;</span>
+<span class="fc" id="L138">    }</span>
+
+    /**
+     * Positions a given rectangle centered along the horizontal axis {@code CENTER_X} at coordinate {@code y}
+     *
+     * @param r The rectangle to position
+     * @param width The current width of the rectangle
+     * @param y The Y-coordinate for the rectangle
+     */
+    private void placeOnAxis(Rectangle r, int width, int y) {
+<span class="fc" id="L148">        int xDest = CENTER_X - (width / 2);</span>
+<span class="fc" id="L149">        r.moveHorizontal(xDest - DEFAULT_X);</span>
+<span class="fc" id="L150">        r.moveVertical(y - DEFAULT_Y);</span>
+<span class="fc" id="L151">    }</span>
+
+    /**
+     * Computes the horizontal coordinate (X) for a wheel based on its 1-indexed position
+     *
+     * @param index The 1-based index of the wheel
+     * @return The X-coordinate where the wheel should be placed
+     */
+    public int wheelX(int index) {
+<span class="fc" id="L160">        int xStartMiddle = CENTER_X - (middleWidth / 2);</span>
+<span class="fc" id="L161">        return xStartMiddle + MARGIN + (index - 1) * (WHEEL_WIDTH + WHEEL_SPACING);</span>
+    }
+
+    /**
+     * Resizes the housing rectangles and repositions all existing wheels to keep them centered
+     *
+     * @param oldMiddleWidth The previous width of the middle section
+     * @param oldBaseWidth The previous width of the base section
+     */
+    private void resizeStructure(int oldMiddleWidth, int oldBaseWidth) {
+<span class="fc" id="L171">        int middleTopOffset = -(middleWidth - oldMiddleWidth) / 2;</span>
+<span class="fc" id="L172">        int baseOffset = -(baseWidth - oldBaseWidth) / 2;</span>
+
+<span class="fc" id="L174">        middleRectangle.changeSize(MIDDLE_HEIGHT, middleWidth);</span>
+<span class="fc" id="L175">        middleRectangle.moveHorizontal(middleTopOffset);</span>
+
+<span class="fc" id="L177">        topRectangle.changeSize(TOP_HEIGHT, topWidth);</span>
+<span class="fc" id="L178">        topRectangle.moveHorizontal(middleTopOffset);</span>
+
+<span class="fc" id="L180">        baseRectangle.changeSize(BASE_HEIGHT, baseWidth);</span>
+<span class="fc" id="L181">        baseRectangle.moveHorizontal(baseOffset);</span>
+
+<span class="fc bfc" id="L183" title="All 2 branches covered.">        for (Wheel wheel : wheelList) {</span>
+<span class="fc" id="L184">            wheel.moveHorizontal(middleTopOffset);</span>
+<span class="fc" id="L185">        }</span>
+<span class="fc" id="L186">    }</span>
+
+    /**
+     * Adds {@code pos} normal wheels to the slot machine, all at once
+     * Same as {@code addWheel(&quot;normal&quot;, pos)}
+     *
+     * @param pos The number of wheels to add
+     */
+    public void addWheel(int pos) {
+<span class="fc" id="L195">        addWheel(&quot;normal&quot;, pos);</span>
+<span class="fc" id="L196">    }</span>
+
+    /**
+     * Adds {@code pos} new wheels of the given type, all at once
+     * The whole operation fails (nothing is added) if the type is unknown or if the
+     * resulting total would exceed {@link #MAX_WHEELS} When it fails and the machine
+     * is visible, the user is warned with a dialog
+     *
+     * @param type the type of the new wheels: &quot;normal&quot;, &quot;lefty&quot; or &quot;rebel&quot;
+     * @param pos  The number of wheels to add
+     */
+    public void addWheel(String type, int pos) {
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">        if (pos &lt; 1) {</span>
+<span class="nc" id="L209">            ok = false;</span>
+<span class="nc" id="L210">            return;</span>
+        }
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if (!isWheelType(type)) {</span>
+<span class="fc" id="L213">            showMessage(&quot;El tipo de rueda &quot; + type + &quot; no existe&quot;, &quot;Error&quot;);</span>
+<span class="fc" id="L214">            ok = false;</span>
+<span class="fc" id="L215">            return;</span>
+        }
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        if (wheelList.size() + pos &gt; MAX_WHEELS) {</span>
+<span class="fc" id="L218">            showMessage(&quot;No puedes agregar &quot; + pos + &quot; ruedas (hay &quot; + wheelList.size() +</span>
+                &quot;, el maximo es &quot; + MAX_WHEELS + &quot;)&quot;, &quot;Limite Maximo&quot;);
+<span class="fc" id="L220">            ok = false;</span>
+<span class="fc" id="L221">            return;</span>
+        }
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        for (int i = 0; i &lt; pos; i++) {</span>
+<span class="fc" id="L224">            addOneWheel(type);</span>
+        }
+<span class="fc" id="L226">        ok = true;</span>
+<span class="fc" id="L227">    }</span>
+    
+    /**
+     * Creates a symbol of the given type A new object is created every time, so
+     * each wheel has its own copy To add a new type of symbol, add it here and in
+     * {@link #isSymbolType(String)}
+     *
+     * @param type  the type of symbol: &quot;normal&quot;, &quot;ephemeral&quot;, &quot;shy&quot; or &quot;joker&quot;
+     * @param color the color of the symbol
+     * @return the new symbol, or null if the type is unknown
+     */
+    private Symbol createSymbol(String type, String color) {
+<span class="fc bfc" id="L239" title="All 2 branches covered.">        if (type.equals(&quot;normal&quot;)) {</span>
+<span class="fc" id="L240">            return new Symbol(color);</span>
+        }
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (type.equals(&quot;ephemeral&quot;)) {</span>
+<span class="fc" id="L243">            return new EphemeralSymbol(color);</span>
+        }
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (type.equals(&quot;shy&quot;)) {</span>
+<span class="fc" id="L246">            return new ShySymbol(color);</span>
+        }
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">        if (type.equals(&quot;joker&quot;)) {</span>
+<span class="fc" id="L249">            return new JokerSymbol(color);</span>
+        }
+<span class="nc" id="L251">        return null;</span>
+    }
+
+    /**
+     * Tells whether a type of symbol exists
+     *
+     * @param type the type of symbol
+     * @return true if the machine knows how to create that type
+     */
+    private boolean isSymbolType(String type) {
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        if (type == null) {</span>
+<span class="fc" id="L262">            return false;</span>
+        }
+<span class="fc bfc" id="L264" title="All 4 branches covered.">        return type.equals(&quot;normal&quot;) || type.equals(&quot;ephemeral&quot;)</span>
+<span class="fc bfc" id="L265" title="All 4 branches covered.">            || type.equals(&quot;shy&quot;) || type.equals(&quot;joker&quot;);</span>
+    }
+
+    /**
+     * Adds a single wheel of the given type at the end of the machine, populated
+     * with all existing symbols, each wheel with its own copy of every symbol
+     * Does not validate the type nor the limits: {@link #addWheel(String, int)}
+     * is responsible for that
+     *
+     * @param type the type of the new wheel
+     */
+    private void addOneWheel(String type) {
+<span class="fc" id="L277">        int oldMiddleWidth = middleWidth;</span>
+<span class="fc" id="L278">        int oldBaseWidth = baseWidth;</span>
+
+<span class="fc" id="L280">        updateWidths(wheelList.size() + 1);</span>
+<span class="fc" id="L281">        resizeStructure(oldMiddleWidth, oldBaseWidth);</span>
+
+<span class="fc" id="L283">        int yWheel = INITIAL_Y + TOP_HEIGHT + 15;</span>
+<span class="fc" id="L284">        int xNew = wheelX(wheelList.size() + 1);</span>
+
+<span class="fc" id="L286">        Wheel newWheel = createWheel(type, xNew, yWheel);</span>
+<span class="fc bfc" id="L287" title="All 2 branches covered.">        for (int i = 0; i &lt; symbols.size(); i++) {</span>
+<span class="fc" id="L288">            newWheel.addSymbol(i, createSymbol(symbolTypes.get(i), symbols.get(i)));</span>
+        }
+<span class="fc" id="L290">        wheelList.add(newWheel);</span>
+<span class="fc" id="L291">    }</span>
+    
+    /**
+     * Creates a wheel of the given type, drawn only if the machine is visible
+     * To add a new type of wheel, add it here and in {@link #isWheelType(String)}
+     *
+     * @param type the type of wheel: &quot;normal&quot;, &quot;lefty&quot; or &quot;rebel&quot;
+     * @param x    X-coordinate of the wheel
+     * @param y    Y-coordinate of the wheel
+     * @return the new wheel, or null if the type is unknown
+     */
+    private Wheel createWheel(String type, int x, int y) {
+<span class="fc bfc" id="L303" title="All 2 branches covered.">        if (type.equals(&quot;normal&quot;)) {</span>
+<span class="fc" id="L304">            return new Wheel(x, y, visible);</span>
+        }
+<span class="fc bfc" id="L306" title="All 2 branches covered.">        if (type.equals(&quot;lefty&quot;)) {</span>
+<span class="fc" id="L307">            return new LeftyWheel(x, y, visible);</span>
+        }
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">        if (type.equals(&quot;rebel&quot;)) {</span>
+<span class="fc" id="L310">            return new RebelWheel(x, y, visible);</span>
+        }
+<span class="nc" id="L312">        return null;</span>
+    }
+
+    /**
+     * Tells whether a type of wheel exists
+     *
+     * @param type the type of wheel
+     * @return true if the machine knows how to create that type
+     */
+    private boolean isWheelType(String type) {
+<span class="fc bfc" id="L322" title="All 2 branches covered.">        if (type == null) {</span>
+<span class="fc" id="L323">            return false;</span>
+        }
+<span class="fc bfc" id="L325" title="All 6 branches covered.">        return type.equals(&quot;normal&quot;) || type.equals(&quot;lefty&quot;) || type.equals(&quot;rebel&quot;);</span>
+    }
+    
+    
+    /**
+     * Returns the wheel to the left of the given one
+     *
+     * @param index 0-based index of a wheel
+     * @return the wheel on its left, or null if it is the first one
+     */
+    private Wheel leftOf(int index) {
+<span class="fc bfc" id="L336" title="All 2 branches covered.">        if (index &gt; 0) {</span>
+<span class="fc" id="L337">            return wheelList.get(index - 1);</span>
+        }
+    
+<span class="fc" id="L340">        return null;</span>
+    }
+    
+    /**
+     * Removes the last pos wheels from the slot machine, all at once
+     * The whole operation fails (nothing is removed) if the resulting total would go
+     * below MIN_WHEELS, or if any of those wheels refuses to be deleted
+     * When it fails and the machine is visible, the user is warned with a dialog
+     *
+     * @param pos The number of wheels to remove
+     */
+    public void delWheel(int pos) {
+<span class="pc bpc" id="L352" title="1 of 2 branches missed.">        if (pos &lt; 1) {</span>
+<span class="nc" id="L353">            ok = false;</span>
+<span class="nc" id="L354">            return;</span>
+        }
+<span class="fc bfc" id="L356" title="All 2 branches covered.">        if (wheelList.size() - pos &lt; MIN_WHEELS) {</span>
+<span class="fc" id="L357">            showMessage(&quot;No puedes eliminar &quot; + pos + &quot; ruedas (hay &quot; + wheelList.size() +</span>
+                &quot;, el minimo es &quot; + MIN_WHEELS + &quot;)&quot;, &quot;Limite Minimo&quot;);
+<span class="fc" id="L359">            ok = false;</span>
+<span class="fc" id="L360">            return;</span>
+        }
+<span class="fc bfc" id="L362" title="All 2 branches covered.">        for (int i = wheelList.size() - pos; i &lt; wheelList.size(); i++) {</span>
+<span class="fc bfc" id="L363" title="All 2 branches covered.">            if (!wheelList.get(i).canBeDeleted()) {</span>
+<span class="fc" id="L364">                showMessage(&quot;La rueda &quot; + (i + 1) + &quot; no se deja eliminar&quot;, &quot;Error&quot;);</span>
+<span class="fc" id="L365">                ok = false;</span>
+<span class="fc" id="L366">                return;</span>
+            }
+        }
+<span class="fc bfc" id="L369" title="All 2 branches covered.">        for (int i = 0; i &lt; pos; i++) {</span>
+<span class="fc" id="L370">            delOneWheel();</span>
+        }
+<span class="fc" id="L372">        ok = true;</span>
+<span class="fc" id="L373">    }</span>
+
+    /**
+     * Removes the last wheel of the machine
+     * Does not validate limits: {@link #delWheel(int)} is responsible for that
+     */
+    private void delOneWheel() {
+<span class="fc" id="L380">        Wheel last = wheelList.remove(wheelList.size() - 1);</span>
+<span class="fc" id="L381">        last.makeInvisible();</span>
+
+<span class="fc" id="L383">        int oldMiddleWidth = middleWidth;</span>
+<span class="fc" id="L384">        int oldBaseWidth = baseWidth;</span>
+<span class="fc" id="L385">        updateWidths(wheelList.size());</span>
+<span class="fc" id="L386">        resizeStructure(oldMiddleWidth, oldBaseWidth);</span>
+<span class="fc" id="L387">    }</span>
+
+    /**
+     * Returns the total number of wheels currently present in the slot machine
+     *
+     * @return The number of wheels
+     */
+    public int getWheels() {
+<span class="fc" id="L395">        return wheelList.size();</span>
+    }
+
+    /**
+     * Adds a new normal symbol (color) at the specified position and inserts it
+     * across all wheels Same as {@code addSymbol(&quot;normal&quot;, pos, color)}
+     *
+     * @param pos 1-based target insertion index for the symbol
+     * @param color The name of the color symbol to add
+     */
+    public void addSymbol(int pos, String color) {
+<span class="fc" id="L406">        addSymbol(&quot;normal&quot;, pos, color);</span>
+<span class="fc" id="L407">    }</span>
+
+    /**
+     * Adds a new symbol of the given type at the specified position and inserts it
+     * across all wheels Fails if the type is unknown or if the color already exists
+     * in the machine; then {@link #ok()} will return {@code false}
+     *
+     * @param type the type of the new symbol: &quot;normal&quot;, &quot;ephemeral&quot; or &quot;shy&quot;
+     * @param pos 1-based target insertion index for the symbol
+     * @param color The name of the color symbol to add
+     */
+    public void addSymbol(String type, int pos, String color) {
+<span class="fc bfc" id="L419" title="All 2 branches covered.">        if (!isSymbolType(type)) {</span>
+<span class="fc" id="L420">            showMessage(&quot;El tipo de simbolo &quot; + type + &quot; no existe&quot;, &quot;Error&quot;);</span>
+<span class="fc" id="L421">            ok = false;</span>
+<span class="fc" id="L422">            return;</span>
+        }
+<span class="fc bfc" id="L424" title="All 2 branches covered.">        if (symbols.contains(color)) {</span>
+<span class="fc" id="L425">            ok = false;</span>
+<span class="fc" id="L426">            return;</span>
+        }
+<span class="fc" id="L428">        int index = clamPos(pos, symbols.size() + 1) - 1;</span>
+<span class="fc" id="L429">        symbols.add(index, color);</span>
+<span class="fc" id="L430">        symbolTypes.add(index, type);</span>
+<span class="fc bfc" id="L431" title="All 2 branches covered.">        for (Wheel wheel : wheelList) {</span>
+<span class="fc" id="L432">            wheel.addSymbol(index, createSymbol(type, color));</span>
+<span class="fc" id="L433">        }</span>
+<span class="fc" id="L434">        ok = true;</span>
+<span class="fc" id="L435">    }</span>
+
+    /**
+     * Removes a symbol (color) from the slot machine and from every wheel
+     * If the symbol is not found, the operation fails and {@link #ok()} will return {@code false}
+     *
+     * @param color The name of the color symbol to remove
+     */
+    public void delSymbol(String color) {
+<span class="fc" id="L444">        int index = symbols.indexOf(color);</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">        if (index == -1) {</span>
+<span class="fc" id="L446">            ok = false;</span>
+<span class="fc" id="L447">            return;</span>
+        }
+<span class="fc" id="L449">        symbols.remove(index);</span>
+<span class="fc" id="L450">        symbolTypes.remove(index);</span>
+<span class="fc bfc" id="L451" title="All 2 branches covered.">        for (Wheel wheel : wheelList) {</span>
+<span class="fc" id="L452">            wheel.delSymbol(color);</span>
+<span class="fc" id="L453">        }</span>
+<span class="fc" id="L454">        ok = true;</span>
+<span class="fc" id="L455">    }</span>
+
+    /**
+     * Clamps a position value to ensure it lies strictly within the range {@code [1, max]}
+     *
+     * @param pos The raw position input
+     * @param max The maximum allowable value
+     * @return The clamped position within {@code [1, max]}
+     */
+    private int clamPos(int pos, int max) {
+<span class="pc bpc" id="L465" title="1 of 2 branches missed.">        if (pos &lt; 1) return 1;</span>
+<span class="pc bpc" id="L466" title="1 of 2 branches missed.">        if (pos &gt; max) return max;</span>
+<span class="fc" id="L467">        return pos;</span>
+    }
+
+    /**
+     * Manually sets the visible symbol on a specific wheel
+     * Checks if the symbol is valid and triggers jackpot verification
+     * If the symbol does not exist and the machine is visible, the user is warned with a dialog
+     *
+     * @param wheel 1-based index of the target wheel
+     * @param symbol The color symbol to display
+     */
+    public void placeSymbol(int wheel, String symbol) {
+<span class="fc bfc" id="L479" title="All 2 branches covered.">        if (!symbols.contains(symbol)) {</span>
+<span class="fc" id="L480">            ok = false;</span>
+<span class="fc" id="L481">            showMessage(&quot;El simbolo &quot; + symbol + &quot; no existe&quot;, &quot;Error&quot;);</span>
+<span class="fc" id="L482">            return;</span>
+        }
+<span class="fc" id="L484">        int index = clamPos(wheel, wheelList.size()) - 1;</span>
+<span class="fc" id="L485">        wheelList.get(index).setSymbol(symbol);</span>
+<span class="fc" id="L486">        checkJackPot();</span>
+<span class="fc" id="L487">        ok = true;</span>
+<span class="fc" id="L488">    }</span>
+
+    /**
+     * Randomly spins a specific wheel a random number of steps (1 to 15)
+     * and checks for a jackpot condition Fails if the wheel is locked
+     *
+     * @param wheel 1-based index of the wheel to spin
+     */
+    public void spin(int wheel) {
+<span class="nc bnc" id="L497" title="All 4 branches missed.">        if (wheelList.isEmpty() || symbols.isEmpty()) {</span>
+<span class="nc" id="L498">            ok = false;</span>
+<span class="nc" id="L499">            return;</span>
+        }
+<span class="nc" id="L501">        int index = clamPos(wheel, wheelList.size()) - 1;</span>
+<span class="nc" id="L502">        Wheel target = wheelList.get(index);</span>
+<span class="nc bnc" id="L503" title="All 2 branches missed.">        if (target.isLocked()) {</span>
+<span class="nc" id="L504">            ok = false;</span>
+<span class="nc" id="L505">            return;</span>
+        }
+<span class="nc" id="L507">        Random r = new Random();</span>
+<span class="nc" id="L508">        int turns = r.nextInt(15) + 1;</span>
+<span class="nc" id="L509">        target.spin(leftOf(index), turns, visible);</span>
+<span class="nc" id="L510">        checkJackPot();</span>
+<span class="nc" id="L511">        ok = true;</span>
+<span class="nc" id="L512">    }</span>
+
+    /**
+     * Randomly spins all unlocked wheels, from left to right, and checks for a
+     * jackpot condition
+     */
+    public void spin() {
+<span class="pc bpc" id="L519" title="2 of 4 branches missed.">        if (wheelList.isEmpty() || symbols.isEmpty()) {</span>
+<span class="nc" id="L520">            ok = false;</span>
+<span class="nc" id="L521">            return;</span>
+        }
+<span class="fc" id="L523">        Random r = new Random();</span>
+<span class="fc bfc" id="L524" title="All 2 branches covered.">        for (int i = 0; i &lt; wheelList.size(); i++) {</span>
+<span class="fc" id="L525">            Wheel w = wheelList.get(i);</span>
+<span class="pc bpc" id="L526" title="1 of 2 branches missed.">            if (!w.isLocked()) {</span>
+<span class="fc" id="L527">                w.spin(leftOf(i), r.nextInt(15) + 1, visible);</span>
+            }
+        }
+<span class="fc" id="L530">        checkJackPot();</span>
+<span class="fc" id="L531">        ok = true;</span>
+<span class="fc" id="L532">    }</span>
+
+    /**
+     * Returns an array of all registered symbols in their insertion order
+     *
+     * @return An array of symbol strings
+     */
+    public String[] symbols() {
+<span class="fc" id="L540">        ok = true;</span>
+<span class="fc" id="L541">        return symbols.toArray(new String[0]);</span>
+    }
+
+    /**
+     * Returns how many different symbols are currently visible across all wheels,
+     * as the friend in the contest would see them This is not the catalog size:
+     * for that use {@code symbols().length} A wheel that shows a joker does not
+     * add a symbol; if there are only jokers, the answer is 1
+     *
+     * @return number of distinct visible symbols (0 if none is shown)
+     */
+    public int distinctSymbols() {
+<span class="fc" id="L553">        HashSet&lt;String&gt; visibleNow = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L554">        boolean anyWild = false;</span>
+<span class="fc bfc" id="L555" title="All 2 branches covered.">        for (Wheel w : wheelList) {</span>
+<span class="fc" id="L556">            String s = w.getVisibleSymbol();</span>
+<span class="fc bfc" id="L557" title="All 2 branches covered.">            if (s != null) {</span>
+<span class="fc bfc" id="L558" title="All 2 branches covered.">                if (w.isWild()) {</span>
+<span class="fc" id="L559">                    anyWild = true;</span>
+                } else {
+<span class="fc" id="L561">                    visibleNow.add(s);</span>
+                }
+            }
+<span class="fc" id="L564">        }</span>
+<span class="fc" id="L565">        ok = true;</span>
+<span class="fc bfc" id="L566" title="All 4 branches covered.">        if (visibleNow.isEmpty() &amp;&amp; anyWild) {</span>
+<span class="fc" id="L567">            return 1;</span>
+        }
+<span class="fc" id="L569">        return visibleNow.size();</span>
+    }
+
+    /**
+     * Returns the array of visible symbols across all wheels from left to right
+     *
+     * @return An array containing the visible symbol string of each wheel
+     */
+    public String[] configuration() {
+<span class="fc" id="L578">        String[] conf = new String[wheelList.size()];</span>
+<span class="fc bfc" id="L579" title="All 2 branches covered.">        for (int i = 0; i &lt; wheelList.size(); i++) {</span>
+<span class="fc" id="L580">            conf[i] = wheelList.get(i).getVisibleSymbol();</span>
+        }
+<span class="fc" id="L582">        ok = true;</span>
+<span class="fc" id="L583">        return conf;</span>
+    }
+
+    /**
+     * Determines whether the current configuration constitutes a jackpot: all the
+     * wheels that do not show a joker show the same symbol A joker counts as any
+     * color, so a machine that shows only jokers is also a jackpot
+     *
+     * @return {@code true} if there is a jackpot; {@code false} otherwise
+     */
+    public boolean isJackpot() {
+<span class="pc bpc" id="L594" title="1 of 4 branches missed.">        if (wheelList.isEmpty() || symbols.isEmpty()) {</span>
+<span class="fc" id="L595">            ok = false;</span>
+<span class="fc" id="L596">            return false;</span>
+        }
+<span class="fc" id="L598">        String first = null;</span>
+<span class="fc bfc" id="L599" title="All 2 branches covered.">        for (int i = 0; i &lt; wheelList.size(); i++) {</span>
+<span class="fc" id="L600">            Wheel w = wheelList.get(i);</span>
+<span class="fc" id="L601">            String color = w.getVisibleSymbol();</span>
+<span class="pc bpc" id="L602" title="1 of 2 branches missed.">            if (color == null) {</span>
+<span class="nc" id="L603">                ok = true;</span>
+<span class="nc" id="L604">                return false;</span>
+            }
+<span class="fc bfc" id="L606" title="All 2 branches covered.">            if (!w.isWild()) {</span>
+<span class="fc bfc" id="L607" title="All 2 branches covered.">                if (first == null) {</span>
+<span class="fc" id="L608">                    first = color;</span>
+<span class="fc bfc" id="L609" title="All 2 branches covered.">                } else if (!first.equals(color)) {</span>
+<span class="fc" id="L610">                    ok = true;</span>
+<span class="fc" id="L611">                    return false;</span>
+                }
+            }
+        }
+<span class="fc" id="L615">        ok = true;</span>
+<span class="fc" id="L616">        return true;</span>
+    }
+
+    /**
+     * Verifies the jackpot status and changes the color of the top and base housing:
+     * magenta on jackpot win, gold otherwise
+     */
+    private void checkJackPot() {
+<span class="fc bfc" id="L624" title="All 2 branches covered.">        if (isJackpot()) {</span>
+<span class="fc" id="L625">            topRectangle.changeColor(&quot;magenta&quot;);</span>
+<span class="fc" id="L626">            baseRectangle.changeColor(&quot;magenta&quot;);</span>
+        } else {
+<span class="fc" id="L628">            topRectangle.changeColor(&quot;gold&quot;);</span>
+<span class="fc" id="L629">            baseRectangle.changeColor(&quot;gold&quot;);</span>
+        }
+<span class="fc" id="L631">    }</span>
+
+    /**
+     * Makes all graphical components of the slot machine visible and shows
+     * the canvas window if it was hidden
+     */
+    public void makeVisible() {
+<span class="fc" id="L638">        visible = true;</span>
+<span class="fc" id="L639">        topRectangle.makeVisible();</span>
+<span class="fc" id="L640">        middleRectangle.makeVisible();</span>
+<span class="fc" id="L641">        baseRectangle.makeVisible();</span>
+<span class="fc bfc" id="L642" title="All 2 branches covered.">        for (Wheel w : wheelList) {</span>
+<span class="fc" id="L643">            w.makeVisible();</span>
+<span class="fc" id="L644">        }</span>
+<span class="fc" id="L645">        Canvas.getCanvas().setVisible(true);</span>
+<span class="fc" id="L646">        ok = true;</span>
+<span class="fc" id="L647">    }</span>
+    
+    /**
+     * Hides all graphical components of the slot machine and the canvas window
+     * From now on, operations draw nothing and never wait
+     */
+    public void makeInvisible() {
+<span class="fc" id="L654">        visible = false;</span>
+<span class="fc" id="L655">        Canvas.getCanvas().setVisible(false);</span>
+<span class="fc" id="L656">        topRectangle.makeInvisible();</span>
+<span class="fc" id="L657">        middleRectangle.makeInvisible();</span>
+<span class="fc" id="L658">        baseRectangle.makeInvisible();</span>
+<span class="fc bfc" id="L659" title="All 2 branches covered.">        for (Wheel w : wheelList) {</span>
+<span class="fc" id="L660">            w.makeInvisible();</span>
+<span class="fc" id="L661">        }</span>
+<span class="fc" id="L662">        ok = true;</span>
+<span class="fc" id="L663">    }</span>
+
+    /**
+     * Exits the slot machine application
+     */
+    public void exit() {
+<span class="nc" id="L669">        System.exit(0);</span>
+<span class="nc" id="L670">    }</span>
+
+    /**
+     * Returns the status of the last executed operation
+     *
+     * @return {@code true} if the last operation succeeded, {@code false} otherwise
+     */
+    public boolean ok() {
+<span class="fc" id="L678">        return ok;</span>
+    }
+
+    /**
+     * Swaps the currently visible symbols between two wheels
+     * Fails if either wheel is locked or refuses to be swapped
+     *
+     * @param wheel1 1-based index of the first wheel
+     * @param wheel2 1-based index of the second wheel
+     */
+    public void swap(int wheel1, int wheel2) {
+<span class="pc bpc" id="L689" title="1 of 2 branches missed.">        if (wheelList.isEmpty()) {</span>
+<span class="nc" id="L690">            ok = false;</span>
+<span class="nc" id="L691">            return;</span>
+        }
+<span class="fc" id="L693">        int i1 = clamPos(wheel1, wheelList.size()) - 1;</span>
+<span class="fc" id="L694">        int i2 = clamPos(wheel2, wheelList.size()) - 1;</span>
+<span class="fc" id="L695">        Wheel w1 = wheelList.get(i1);</span>
+<span class="fc" id="L696">        Wheel w2 = wheelList.get(i2);</span>
+
+<span class="pc bpc" id="L698" title="1 of 4 branches missed.">        if (w1.isLocked() || w2.isLocked()) {</span>
+<span class="fc" id="L699">            ok = false;</span>
+<span class="fc" id="L700">            return;</span>
+        }
+<span class="fc bfc" id="L702" title="All 4 branches covered.">        if (!w1.canBeSwapped() || !w2.canBeSwapped()) {</span>
+<span class="fc" id="L703">            showMessage(&quot;Una de las ruedas no se deja intercambiar&quot;, &quot;Error&quot;);</span>
+<span class="fc" id="L704">            ok = false;</span>
+<span class="fc" id="L705">            return;</span>
+        }
+
+<span class="fc" id="L708">        String s1 = w1.getVisibleSymbol();</span>
+<span class="fc" id="L709">        String s2 = w2.getVisibleSymbol();</span>
+<span class="fc" id="L710">        w1.setSymbol(s2);</span>
+<span class="fc" id="L711">        w2.setSymbol(s1);</span>
+<span class="fc" id="L712">        checkJackPot();</span>
+<span class="fc" id="L713">        ok = true;</span>
+<span class="fc" id="L714">    }</span>
+
+        /**
+     * Locks a wheel, protecting it from any spin or swap operation
+     * Fails if the wheel refuses to be locked
+     *
+     * @param wheel 1-based index of the wheel to lock
+     */
+    public void lock(int wheel) {
+<span class="pc bpc" id="L723" title="1 of 2 branches missed.">        if (wheelList.isEmpty()) {</span>
+<span class="nc" id="L724">            ok = false;</span>
+<span class="nc" id="L725">            return;</span>
+        }
+<span class="fc" id="L727">        int index = clamPos(wheel, wheelList.size()) - 1;</span>
+<span class="fc" id="L728">        Wheel target = wheelList.get(index);</span>
+<span class="fc bfc" id="L729" title="All 2 branches covered.">        if (!target.canBeLocked()) {</span>
+<span class="fc" id="L730">            showMessage(&quot;La rueda &quot; + (index + 1) + &quot; no se deja bloquear&quot;, &quot;Error&quot;);</span>
+<span class="fc" id="L731">            ok = false;</span>
+<span class="fc" id="L732">            return;</span>
+        }
+<span class="fc" id="L734">        target.lock();</span>
+<span class="fc" id="L735">        ok = true;</span>
+<span class="fc" id="L736">    }</span>
+
+    /**
+     * Unlocks a wheel, letting it spin or swap normally again
+     *
+     * @param wheel 1-based index of the wheel to unlock
+     */
+    public void unlock(int wheel) {
+<span class="pc bpc" id="L744" title="1 of 2 branches missed.">        if (wheelList.isEmpty()) {</span>
+<span class="nc" id="L745">            ok = false;</span>
+<span class="nc" id="L746">            return;</span>
+        }
+<span class="fc" id="L748">        int index = clamPos(wheel, wheelList.size()) - 1;</span>
+<span class="fc" id="L749">        wheelList.get(index).unlock();</span>
+<span class="fc" id="L750">        ok = true;</span>
+<span class="fc" id="L751">    }</span>
+
+    /**
+     * Rotates a specific wheel by an exact number of steps (not random)
+     * Steps may be negative (rotate backwards) or very large: they are reduced
+     * modulo the number of symbols If the machine is visible, the rotation is
+     * shown step by step Fails if the wheel is locked
+     *
+     * @param wheel 1-based index of the wheel to spin
+     * @param steps number of positions to rotate
+     */
+    public void spin(int wheel, int steps) {
+<span class="pc bpc" id="L763" title="1 of 4 branches missed.">        if (wheelList.isEmpty() || symbols.isEmpty()) {</span>
+<span class="fc" id="L764">            ok = false;</span>
+<span class="fc" id="L765">            return;</span>
+        }
+<span class="fc" id="L767">        int index = clamPos(wheel, wheelList.size()) - 1;</span>
+<span class="fc" id="L768">        Wheel target = wheelList.get(index);</span>
+<span class="fc bfc" id="L769" title="All 2 branches covered.">        if (target.isLocked()) {</span>
+<span class="fc" id="L770">            ok = false;</span>
+<span class="fc" id="L771">            return;</span>
+        }
+<span class="fc" id="L773">        target.spin(leftOf(index), steps, visible);</span>
+<span class="fc" id="L774">        checkJackPot();</span>
+<span class="fc" id="L775">        ok = true;</span>
+<span class="fc" id="L776">    }</span>
+
+    /**
+     * Leaves the machine showing exactly the given configuration: wheel i displays
+     * setSymbols[i-1] Fails entirely if the array length doesn't match the current
+     * number of wheels, or if any given symbol isn't in the machine's catalog
+     * Locked wheels keep their current symbol, ignoring what the array says for them
+     *
+     * @param setSymbols desired visible symbol for each wheel, left to right
+     */
+    public void spin(String[] setSymbols) {
+<span class="pc bpc" id="L787" title="1 of 4 branches missed.">        if (setSymbols == null || setSymbols.length != wheelList.size()) {</span>
+<span class="fc" id="L788">            ok = false;</span>
+<span class="fc" id="L789">            return;</span>
+        }
+<span class="fc bfc" id="L791" title="All 2 branches covered.">        for (String s : setSymbols) {</span>
+<span class="fc bfc" id="L792" title="All 2 branches covered.">            if (!symbols.contains(s)) {</span>
+<span class="fc" id="L793">                ok = false;</span>
+<span class="fc" id="L794">                return;</span>
+            }
+        }
+<span class="fc bfc" id="L797" title="All 2 branches covered.">        for (int i = 0; i &lt; wheelList.size(); i++) {</span>
+<span class="fc bfc" id="L798" title="All 2 branches covered.">            if (!wheelList.get(i).isLocked()) {</span>
+<span class="fc" id="L799">                wheelList.get(i).setSymbol(setSymbols[i]);</span>
+            }
+        }
+<span class="fc" id="L802">        checkJackPot();</span>
+<span class="fc" id="L803">        ok = true;</span>
+<span class="fc" id="L804">    }</span>
+    // CIclo 3
+    /** Colors used as symbols by {@link #SlotMachine(int)}: 50 different CSS color names */
+<span class="fc" id="L807">    private static final String[] PALETTE = {</span>
+        &quot;red&quot;, &quot;blue&quot;, &quot;green&quot;, &quot;yellow&quot;, &quot;orange&quot;, &quot;purple&quot;, &quot;pink&quot;, &quot;brown&quot;, &quot;cyan&quot;, &quot;lime&quot;,
+        &quot;navy&quot;, &quot;teal&quot;, &quot;maroon&quot;, &quot;olive&quot;, &quot;coral&quot;, &quot;salmon&quot;, &quot;crimson&quot;, &quot;indigo&quot;, &quot;violet&quot;, &quot;turquoise&quot;,
+        &quot;tan&quot;, &quot;khaki&quot;, &quot;orchid&quot;, &quot;plum&quot;, &quot;tomato&quot;, &quot;chocolate&quot;, &quot;sienna&quot;, &quot;peru&quot;, &quot;skyblue&quot;, &quot;steelblue&quot;,
+        &quot;royalblue&quot;, &quot;dodgerblue&quot;, &quot;slateblue&quot;, &quot;seagreen&quot;, &quot;forestgreen&quot;, &quot;limegreen&quot;, &quot;springgreen&quot;,
+        &quot;chartreuse&quot;, &quot;darkorange&quot;, &quot;hotpink&quot;, &quot;deeppink&quot;, &quot;firebrick&quot;, &quot;darkred&quot;, &quot;darkgreen&quot;,
+        &quot;darkblue&quot;, &quot;aquamarine&quot;, &quot;lavender&quot;, &quot;beige&quot;, &quot;mediumpurple&quot;, &quot;goldenrod&quot;
+    };
+    /**
+     * Constructs an invisible machine with n wheels and n different symbols, as in the
+     * contest Every wheel has the same symbols in the same order, and the initial
+     * configuration is random and never a jackpot (so there are always at least two
+     * different visible symbols)
+     * If n is outside [{@link #MIN_WHEELS}, {@link #MAX_WHEELS}] it is adjusted to the
+     * nearest valid value and {@link #ok()} returns {@code false}
+     *
+     * @param n number of wheels and of symbols
+     */
+    public SlotMachine(int n) {
+<span class="fc" id="L826">        this(false);</span>
+<span class="fc" id="L827">        int size = Math.max(MIN_WHEELS, Math.min(n, MAX_WHEELS));</span>
+<span class="fc bfc" id="L828" title="All 2 branches covered.">        if (size &gt; MIN_WHEELS) {</span>
+<span class="fc" id="L829">            addWheel(size - MIN_WHEELS);</span>
+        }
+<span class="fc bfc" id="L831" title="All 2 branches covered.">        for (int i = 1; i &lt;= size; i++) {</span>
+<span class="fc" id="L832">            addSymbol(i, PALETTE[i - 1]);</span>
+        }
+<span class="fc" id="L834">        randomizeConfiguration();</span>
+<span class="fc bfc" id="L835" title="All 2 branches covered.">        ok = (size == n);</span>
+<span class="fc" id="L836">    }</span>
+    
+    /**
+     * Leaves every wheel showing a random symbol, repeating until the result
+     * is not a jackpot
+     */
+    private void randomizeConfiguration() {
+<span class="fc" id="L843">        Random r = new Random();</span>
+<span class="fc" id="L844">        String[] target = new String[wheelList.size()];</span>
+        do {
+<span class="fc bfc" id="L846" title="All 2 branches covered.">            for (int i = 0; i &lt; target.length; i++) {</span>
+<span class="fc" id="L847">                target[i] = symbols.get(r.nextInt(symbols.size()));</span>
+            }
+<span class="fc" id="L849">            spin(target);</span>
+<span class="fc bfc" id="L850" title="All 2 branches covered.">        } while (isJackpot());</span>
+<span class="fc" id="L851">    }</span>
+    
+    /**
+     * Shows a warning dialog to the user, but only if the machine is visible
+     * An invisible machine (unit tests, the contest solver) never opens dialogs
+     *
+     * @param message text of the warning
+     * @param title   title of the dialog window
+     */
+    private void showMessage(String message, String title) {
+<span class="pc bpc" id="L861" title="1 of 2 branches missed.">        if (visible) {</span>
+<span class="nc" id="L862">            JOptionPane.showMessageDialog(null, message, title, JOptionPane.WARNING_MESSAGE);</span>
+        }
+<span class="fc" id="L864">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

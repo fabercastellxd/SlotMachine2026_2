@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EphemeralSymbol.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">EphemeralSymbol.java</span></div><h1>EphemeralSymbol.java</h1><pre class="source lang-java linenums">/**
+ * An ephemeral symbol: with every spin of its wheel it gets smaller, until it
+ * is only a dot A black square marks it
+ *
+ * @author Mateo Sanchez
+ * @author Maria Angelica Perez
+ */
+public class EphemeralSymbol extends Symbol {
+
+    private static final int STEP_PERCENT = 20;
+
+<span class="fc" id="L12">    private int sizePercent = 100;</span>
+
+    /**
+     * Creates an ephemeral symbol with the given color, at full size
+     *
+     * @param color CSS name of the color
+     */
+    public EphemeralSymbol(String color) {
+<span class="fc" id="L20">        super(color);</span>
+<span class="fc" id="L21">    }</span>
+
+    /** Returns the current size: 100 at the start, 0 when it is a dot */
+    @Override
+    public int getSizePercent() {
+<span class="fc" id="L26">        return sizePercent;</span>
+    }
+
+    /** An ephemeral symbol is marked in black */
+    @Override
+    public String getMarkColor() {
+<span class="fc" id="L32">        return &quot;black&quot;;</span>
+    }
+
+    /** Shrinks the symbol one step, never below a dot */
+    @Override
+    public void onSpin() {
+<span class="fc" id="L38">        sizePercent = Math.max(0, sizePercent - STEP_PERCENT);</span>
+<span class="fc" id="L39">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>
